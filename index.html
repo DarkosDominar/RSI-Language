@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSI Language</title>
+    <style>
+        #copyNotification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            display: none;
+            z-index: 1000;
+            font-size: 14px;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background: url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            z-index: -1;
+        }
+
+        h1 {
+            color: #fff;
+        }
+
+        .text-container {
+            position: relative;
+            display: inline-block;
+            width: 80%;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        #outputText {
+            background: transparent;
+            padding: 10px;
+            min-height: 100px;
+            font-size: 16px;
+            word-wrap: break-word;
+            color: #fff;
+        }
+
+        button {
+            margin: 5px;
+            padding: 12px 25px;
+            font-size: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            background: linear-gradient(145deg, #1e1e1e, #2c2c2c);
+            box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.1),
+                        inset -2px -2px 5px rgba(0, 0, 0, 0.8),
+                        3px 3px 5px rgba(0, 0, 0, 0.6);
+            color: #ffffff;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: linear-gradient(145deg, #2c2c2c, #3a3a3a);
+            box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.2),
+                        inset -2px -2px 5px rgba(0, 0, 0, 0.9),
+                        3px 3px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        .translate-btn {
+            background: linear-gradient(145deg, #1e1e1e, #252525);
+        }
+
+        .play-btn {
+            background: linear-gradient(145deg, #400000, #700000);
+        }
+
+        .copy-icon {
+            position: absolute;
+            bottom: 5px;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+        }
+
+        .input-copy {
+            left: 5px;
+            fill: #000;
+        }
+
+        .output-copy {
+            right: 5px;
+            fill: #fff;
+        }
+
+        .copy-icon:hover {
+            opacity: 0.8;
+        }
+
+        .menu-icon {
+            font-size: 30px;
+            color: white;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            cursor: pointer;
+            z-index: 999;
+        }
+
+        .background-options {
+            display: none;
+            position: fixed;
+            top: 60px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 998;
+        }
+
+        .background-options button {
+            display: block;
+            margin: 5px 0;
+            background-color: #3498db;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>RSI Language</h1>
+    
+    <div class="text-container input-container">
+        <textarea id="inputText" placeholder="أدخل النص هنا..."></textarea>
+        <svg class="copy-icon input-copy" onclick="copyInputText()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path fill="none" d="M0 0h24v24H0z"/>
+            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+        </svg>
+    </div>
+
+    <button class="translate-btn" onclick="translateToAvestan()">Translate to RSI Language</button>
+    <button class="translate-btn" onclick="translateToArabic()">Translate to Arabic</button>
+    <button class="play-btn" onclick="playAudio()">Play Audio</button>
+    
+    <div class="text-container output-container" style="background: transparent;">
+        <p id="outputText"></p>
+        <svg class="copy-icon output-copy" onclick="copyOutputText()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path fill="none" d="M0 0h24v24H0z"/>
+            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+        </svg>
+    </div>
+
+    <div class="menu-icon" onclick="toggleBackgroundOptions()">☰</div>
+    
+    <div class="background-options" id="backgroundOptions">
+        <button onclick="changeBackground('white')">White Background</button>
+        <button onclick="changeBackground('black')">Black Background</button>
+        <button onclick="triggerFileInput()">Choose Background Image</button>
+        <input type="file" id="fileInput" style="display:none" accept="image/*" onchange="uploadImage(event)">
+    </div>
+
+    <div id="copyNotification">text copied</div>
+
+    <script>
+        // الثوابت الأساسية (معدلة)
+        const avestanChars = [
+            "𐬍","𐬎","𐬏","𐬐","𐬑","𐬒","𐬓","𐬔","𐬕","𐬖","𐬗","𐬘",
+            "𐬙","𐬚","𐬛","𐬜","𐬝","𐬞","𐬟","𐬠","𐬡","𐬢","𐬣","𐬤",
+            "𐬥","𐬦","𐬧","𐬨","𐬩","𐬪","𐬫","𐬬","𐬰","𐬯","𐬮","𐬭",
+            "𐬵","𐬴","𐬳","𐬲","𐬱"
+        ];
+        
+        const arabicChars = [
+            "ا","ل","ب","ت","خ","ي","س","ط","و","ظ","ش","ص","ض","ق","ف",
+            "غ","ع","ج","ح","ز","ه","د","ذ","ث","م","ن","ك","ر","ة","أ","ى",
+            "٫","\"",",","،","ئ","إ","آ","ء","؟"
+        ];
+
+        // خرائط الرموز الثابتة
+        const fixedSymbolMap = {
+            "0": "𐬀", "1": "𐬁", "2": "𐬂", "3": "𐬃", "4": "𐬄",
+            "5": "𐬅", "6": "𐬆", "7": "𐬇", "8": "𐬈", "9": "𐬉",
+            "(": "𐬊", ")": "𐬋", ":": "𐬌"
+        };
+        const fixedReverseSymbolMap = Object.fromEntries(
+            Object.entries(fixedSymbolMap).map(([k, v]) => [v, k])
+        );
+
+        // نظام التشفير الديناميكي
+        function seededRandom(seed) {
+            let m = 0x80000000, a = 1103515245, c = 12345, state = seed;
+            return function() {
+                state = (a * state + c) % m;
+                return state / (m - 1);
+            }
+        }
+
+        function seededShuffle(array, seed) {
+            let random = seededRandom(seed);
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function generateDynamicMap(seed) {
+            const shuffled = seededShuffle(avestanChars, seed);
+            return arabicChars.reduce((acc, char, index) => {
+                acc[char] = shuffled[index % shuffled.length];
+                return acc;
+            }, {});
+        }
+
+        // الترجمة إلى الأفستانية (معدلة)
+        function translateToAvestan() {
+            const inputText = document.getElementById("inputText").value;
+            
+            const customTimeMatch = inputText.match(/\((\d{2}:\d{2})\)/);
+            let seed, originalTime, translatedTime;
+
+            if (customTimeMatch) {
+                const [h, m] = customTimeMatch[1].split(':');
+                const hours = parseInt(h);
+                const minutes = parseInt(m);
+                
+                if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+                    seed = hours * 60 + minutes;
+                    originalTime = `${h.padStart(2,'0')}:${m.padStart(2,'0')}`;
+                    translatedTime = originalTime.split('').map(c => 
+                        fixedSymbolMap[c] || c
+                    ).join('');
+                } else {
+                    alert("⏳ الوقت المخصص غير صالح - سيتم استخدام الوقت الحالي");
+                    const now = new Date();
+                    seed = now.getUTCHours() * 60 + now.getUTCMinutes();
+                    originalTime = now.getUTCHours().toString().padStart(2,'0') + ':' + 
+                                  now.getUTCMinutes().toString().padStart(2,'0');
+                    translatedTime = originalTime.split('').map(c => 
+                        fixedSymbolMap[c] || c
+                    ).join('');
+                }
+                var cleanInput = inputText.replace(customTimeMatch[0], '').trim();
+            } else {
+                const now = new Date();
+                seed = now.getUTCHours() * 60 + now.getUTCMinutes();
+                originalTime = now.getUTCHours().toString().padStart(2,'0') + ':' + 
+                              now.getUTCMinutes().toString().padStart(2,'0');
+                translatedTime = originalTime.split('').map(c => 
+                    fixedSymbolMap[c] || c
+                ).join('');
+                cleanInput = inputText;
+            }
+
+            const dynamicMap = generateDynamicMap(seed);
+            
+            const translatedText = cleanInput.split('').map(c => {
+                if(fixedSymbolMap[c]) return fixedSymbolMap[c];
+                return dynamicMap[c] || c;
+            }).join('');
+            
+            document.getElementById("outputText").innerText = 
+                `${translatedText} ${fixedSymbolMap["("]}${translatedTime}${fixedSymbolMap[")"]}`;
+        }
+
+        // الترجمة إلى العربية (معدلة)
+        function translateToArabic() {
+            const inputText = document.getElementById("inputText").value.trim();
+            const start = inputText.lastIndexOf(fixedSymbolMap["("]);
+            const end = inputText.lastIndexOf(fixedSymbolMap[")"]);
+            
+            if (start === -1 || end === -1 || start >= end) {
+                alert("❗ التنسيق غير صحيح - يجب أن يحتوي النص على توقيت بين 𐬊 و𐬋 في النهاية");
+                return;
+            }
+
+            const timePart = inputText.slice(start + 1, end);
+            let originalTime = "";
+            for (const char of timePart) {
+                originalTime += fixedReverseSymbolMap[char] || char;
+            }
+
+            const timeParts = originalTime.split(fixedReverseSymbolMap[":"] || ":");
+            if (timeParts.length !== 2) {
+                alert("⏳ تنسيق الوقت غير صحيح - يجب أن يكون بالشكل HH:MM");
+                return;
+            }
+
+            const hoursStr = timeParts[0].replace(/[^0-9]/g, '');
+            const minutesStr = timeParts[1].replace(/[^0-9]/g, '');
+            
+            if (hoursStr === "" || minutesStr === "") {
+                alert("⏳ الوقت يحتوي على رموز غير رقمية");
+                return;
+            }
+
+            const hours = parseInt(hoursStr.padStart(2, '0'));
+            const minutes = parseInt(minutesStr.padStart(2, '0'));
+
+            if (isNaN(hours) || hours < 0 || hours > 23 ||
+                isNaN(minutes) || minutes < 0 || minutes > 59) {
+                alert(`⏳ وقت غرينيتش غير صالح: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
+                return;
+            }
+
+            const seed = hours * 60 + minutes;
+            const shuffled = seededShuffle(avestanChars, seed);
+            const reverseMap = arabicChars.reduce((acc, char, index) => {
+                acc[shuffled[index]] = char;
+                return acc;
+            }, {});
+
+            const cleanText = inputText.slice(0, start).trim();
+            let outputText = "";
+            for (const char of cleanText) {
+                outputText += fixedReverseSymbolMap[char] || reverseMap[char] || char;
+            }
+            
+            document.getElementById("outputText").innerText = outputText;
+        }
+
+        // نظام النطق
+        const avestanPronunciation = {
+            "𐬍":"š", "𐬎":"ž", "𐬏":"ŋ", "𐬐":"k", "𐬑":"x",
+            "𐬒":"γ", "𐬓":"č", "𐬔":"ǰ", "𐬕":"t", "𐬖":"d",
+            "𐬗":"p", "𐬘":"b", "𐬙":"n", "𐬚":"m", "𐬛":"y",
+            "𐬜":"v", "𐬝":"r", "𐬞":"l", "𐬟":"s", "𐬠":"z",
+            "𐬡":"š", "𐬢":"h", "𐬣":"ḵ", "𐬤":"ẖ", "𐬥":"‘",
+            "𐬦":"’", "𐬧":"ń", "𐬨":"ṇ", "𐬩":"ḷ", "𐬪":"ḹ",
+            "𐬫":"ṝ", "𐬬":"ṛ", "𐬰":"ž", "𐬯":"š", "𐬮":"l",
+            "𐬭":"r", "𐬵":"h", "𐬴":"š", "𐬳":"š", "𐬲":"z", "𐬱":"š"
+        };
+
+        function playAudio() {
+            const text = document.getElementById("outputText").innerText.replace(
+                new RegExp(`${fixedSymbolMap["("]}.*?${fixedSymbolMap[")"]}$`), ""
+            ).trim();
+            let pronunciation = "";
+            for (const char of text) {
+                pronunciation += avestanPronunciation[char] || (/[\u0600-\u06FF]/.test(char) ? char : "");
+            }
+            const utterance = new SpeechSynthesisUtterance(pronunciation);
+            utterance.lang = "ar";
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // دوال إدارة الخلفية
+        function changeBackground(color) {
+            document.body.style.background = color === 'white' ? 'white' : 'black';
+        }
+
+        function toggleBackgroundOptions() {
+            const options = document.getElementById('backgroundOptions');
+            options.style.display = options.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function triggerFileInput() {
+            document.getElementById('fileInput').click();
+        }
+
+        function uploadImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = () => {
+                document.body.style.background = `url(${reader.result}) center/cover fixed`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // دوال النسخ
+        function showNotification() {
+            const notification = document.getElementById("copyNotification");
+            notification.style.display = "block";
+            setTimeout(() => notification.style.display = "none", 3000);
+        }
+
+        function copyInputText() {
+            const input = document.getElementById("inputText");
+            input.select();
+            navigator.clipboard.writeText(input.value)
+                .then(showNotification)
+                .catch(() => document.execCommand('copy') && showNotification());
+        }
+
+        function copyOutputText() {
+            const text = document.getElementById("outputText").innerText;
+            navigator.clipboard.writeText(text)
+                .then(showNotification)
+                .catch(() => {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    showNotification();
+                });
+        }
+    </script>
+</body>
+</html>
