@@ -165,7 +165,7 @@
     <button class="translate-btn" onclick="translateToArabic()">Translate to Arabic</button>
     <button class="play-btn" onclick="playAudio()">Play Audio</button>
     
-    <div class="text-container output-container" style="background: transparent;">
+    <div class="text-container output-container">
         <p id="outputText"></p>
         <svg class="copy-icon output-copy" onclick="copyOutputText()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <path fill="none" d="M0 0h24v24H0z"/>
@@ -185,21 +185,18 @@
     <div id="copyNotification">text copied</div>
 
     <script>
-        // الثوابت الأساسية
+        // الأحرف والخرائط الأساسية
         const avestanChars = [
             "𐬍","𐬎","𐬏","𐬐","𐬑","𐬒","𐬓","𐬔","𐬕","𐬖","𐬗","𐬘",
             "𐬙","𐬚","𐬛","𐬜","𐬝","𐬞","𐬟","𐬠","𐬡","𐬢","𐬣","𐬤",
             "𐬥","𐬦","𐬧","𐬨","𐬩","𐬪","𐬫","𐬬","𐬰","𐬯","𐬮","𐬭",
             "𐬵","𐬴","𐬳","𐬲","𐬱"
         ];
-        
         const arabicChars = [
             "ا","ل","ب","ت","خ","ي","س","ط","و","ظ","ش","ص","ض","ق","ف",
             "غ","ع","ج","ح","ز","ه","د","ذ","ث","م","ن","ك","ر","ة","أ","ى",
-            "٫","\"",",","،","ئ","إ","آ","ء","؟"
+            "_","٫","\"",",","،","ئ","إ","آ","ء","؟"
         ];
-
-        // خرائط الرموز الثابتة
         const fixedSymbolMap = {
             "0": "𐬀", "1": "𐬁", "2": "𐬂", "3": "𐬃", "4": "𐬄",
             "5": "𐬅", "6": "𐬆", "7": "𐬇", "8": "𐬈", "9": "𐬉",
@@ -209,7 +206,6 @@
             Object.entries(fixedSymbolMap).map(([k, v]) => [v, k])
         );
 
-        // نظام التشفير الديناميكي
         function seededRandom(seed) {
             let m = 0x80000000, a = 1103515245, c = 12345, state = seed;
             return function() {
@@ -217,7 +213,6 @@
                 return state / (m - 1);
             }
         }
-
         function seededShuffle(array, seed) {
             let random = seededRandom(seed);
             let arr = [...array];
@@ -227,7 +222,6 @@
             }
             return arr;
         }
-
         function generateDynamicMap(seed) {
             const shuffled = seededShuffle(avestanChars, seed);
             return arabicChars.reduce((acc, char, index) => {
@@ -236,145 +230,96 @@
             }, {});
         }
 
-        // الترجمة إلى الأفستانية
         function translateToAvestan() {
             const inputText = document.getElementById("inputText").value;
-            
             const customTimeMatch = inputText.match(/\((\d{2}:\d{2})\)/);
-            let seed, originalTime, translatedTime;
-
+            let seed, originalTime, translatedTime, cleanInput;
             if (customTimeMatch) {
                 const [h, m] = customTimeMatch[1].split(':');
-                const hours = parseInt(h);
-                const minutes = parseInt(m);
-                
+                const hours = parseInt(h), minutes = parseInt(m);
                 if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
                     seed = hours * 60 + minutes;
                     originalTime = `${h.padStart(2,'0')}:${m.padStart(2,'0')}`;
-                    translatedTime = originalTime.split('').map(c => 
-                        fixedSymbolMap[c] || c
-                    ).join('');
                 } else {
-                    alert("يوجد خطأ في النص الذي أدخلته لذا سنترجم حسب إصلاحنا له حاليًا ✖️🛑");
                     const now = new Date();
                     seed = now.getUTCHours() * 60 + now.getUTCMinutes();
-                    originalTime = now.getUTCHours().toString().padStart(2,'0') + ':' + 
-                                  now.getUTCMinutes().toString().padStart(2,'0');
-                    translatedTime = originalTime.split('').map(c => 
-                        fixedSymbolMap[c] || c
-                    ).join('');
+                    originalTime = now.getUTCHours().toString().padStart(2,'0') +
+                                   ':' + now.getUTCMinutes().toString().padStart(2,'0');
                 }
-                var cleanInput = inputText.replace(customTimeMatch[0], '').trim();
+                translatedTime = originalTime.split('').map(c =>
+                    fixedSymbolMap[c] || c
+                ).join('');
+                cleanInput = inputText.replace(customTimeMatch[0], '').trim();
             } else {
                 const now = new Date();
                 seed = now.getUTCHours() * 60 + now.getUTCMinutes();
-                originalTime = now.getUTCHours().toString().padStart(2,'0') + ':' + 
-                              now.getUTCMinutes().toString().padStart(2,'0');
-                translatedTime = originalTime.split('').map(c => 
+                originalTime = now.getUTCHours().toString().padStart(2,'0') +
+                               ':' + now.getUTCMinutes().toString().padStart(2,'0');
+                translatedTime = originalTime.split('').map(c =>
                     fixedSymbolMap[c] || c
                 ).join('');
                 cleanInput = inputText;
             }
 
             const dynamicMap = generateDynamicMap(seed);
-            
             const words = cleanInput.split(/\s+/);
-            
-            const translatedWords = words.map(word => 
-                word.split('').map(c => {
-                    if(fixedSymbolMap[c]) return fixedSymbolMap[c];
-                    return dynamicMap[c] || c;
-                }).join('')
+            const translatedWords = words.map(word =>
+                word.split('').map(c => fixedSymbolMap[c] || dynamicMap[c] || c).join('')
             );
-            
             if (translatedWords.length > 0) {
                 const randomIndex = Math.floor(Math.random() * (translatedWords.length + 1));
                 translatedWords.splice(randomIndex, 0, `${fixedSymbolMap["("]}${translatedTime}${fixedSymbolMap[")"]}`);
             } else {
                 translatedWords.push(`${fixedSymbolMap["("]}${translatedTime}${fixedSymbolMap[")"]}`);
             }
-            
-            const translatedText = translatedWords.join(' ');
-            
-            document.getElementById("outputText").innerText = translatedText;
+            document.getElementById("outputText").innerText = translatedWords.join(' ');
         }
 
-        // الترجمة إلى العربية (معدلة)
         function translateToArabic() {
             const inputText = document.getElementById("inputText").value.trim();
-            
             const timeRegex = new RegExp(`${fixedSymbolMap["("]}[\\uD800-\\uDBFF\\uDC00-\\uDFFF]+${fixedSymbolMap[")"]}`);
             const timeMatch = inputText.match(timeRegex);
-            
-            let seed;
-            let cleanText = inputText;
-
+            let seed, cleanText = inputText;
             if (timeMatch) {
-                // استخراج الوقت من النص
                 const timePart = timeMatch[0].slice(1, -1);
                 let originalTime = "";
                 for (const char of timePart) {
                     originalTime += fixedReverseSymbolMap[char] || char;
                 }
-                
-                const timeParts = originalTime.split(fixedReverseSymbolMap[":"] || ":");
-                if (timeParts.length !== 2) {
-                    alert("النص غير صحيح🛑🚧");
-                    return;
-                }
-                
-                const hoursStr = timeParts[0].replace(/[^0-9]/g, '');
-                const minutesStr = timeParts[1].replace(/[^0-9]/g, '');
-                
-                if (hoursStr === "" || minutesStr === "") {
+                const [hStr, mStr] = originalTime.split(':').map(s => s.replace(/\D/g, ''));
+                const hours = parseInt(hStr), minutes = parseInt(mStr);
+                if (!isNaN(hours) && !isNaN(minutes) && hours>=0 && hours<=23 && minutes>=0 && minutes<=59) {
+                    seed = hours * 60 + minutes;
+                    cleanText = inputText.replace(timeRegex, '').trim();
+                } else {
                     alert("النص غير صحيح🔴❌");
                     return;
                 }
-                
-                const hours = parseInt(hoursStr.padStart(2, '0'));
-                const minutes = parseInt(minutesStr.padStart(2, '0'));
-                
-                if (isNaN(hours) || hours < 0 || hours > 23 ||
-                    isNaN(minutes) || minutes < 0 || minutes > 59) {
-                    alert("🚫❗ النص غير صحيح");
-                    return;
-                }
-                
-                seed = hours * 60 + minutes;
-                cleanText = inputText.replace(timeRegex, '').trim();
             } else {
-                // استخدام الوقت الحالي إذا لم يكن هناك وقت في النص
                 const now = new Date();
-                const hours = now.getUTCHours();
-                const minutes = now.getUTCMinutes();
-                seed = hours * 60 + minutes;
-                cleanText = inputText.trim();
+                seed = now.getUTCHours() * 60 + now.getUTCMinutes();
             }
-            
             const shuffled = seededShuffle(avestanChars, seed);
             const reverseMap = arabicChars.reduce((acc, char, index) => {
                 acc[shuffled[index]] = char;
                 return acc;
             }, {});
-            
             let outputText = "";
             for (const char of cleanText) {
                 outputText += fixedReverseSymbolMap[char] || reverseMap[char] || char;
             }
-            
             document.getElementById("outputText").innerText = outputText;
         }
 
-        // نظام النطق
         const avestanPronunciation = {
-            "𐬍":"š", "𐬎":"ž", "𐬏":"ŋ", "𐬐":"k", "𐬑":"x",
-            "𐬒":"γ", "𐬓":"č", "𐬔":"ǰ", "𐬕":"t", "𐬖":"d",
-            "𐬗":"p", "𐬘":"b", "𐬙":"n", "𐬚":"m", "𐬛":"y",
-            "𐬜":"v", "𐬝":"r", "𐬞":"l", "𐬟":"s", "𐬠":"z",
-            "𐬡":"š", "𐬢":"h", "𐬣":"ḵ", "𐬤":"ẖ", "𐬥":"‘",
-            "𐬦":"’", "𐬧":"ń", "𐬨":"ṇ", "𐬩":"ḷ", "𐬪":"ḹ",
-            "𐬫":"ṝ", "𐬬":"ṛ", "𐬰":"ž", "𐬯":"š", "𐬮":"l",
-            "𐬭":"r", "𐬵":"h", "𐬴":"š", "𐬳":"š", "𐬲":"z", "𐬱":"š"
+            "𐬍":"š","𐬎":"ž","𐬏":"ŋ","𐬐":"k","𐬑":"x",
+            "𐬒":"γ","𐬓":"č","𐬔":"ǰ","𐬕":"t","𐬖":"d",
+            "𐬗":"p","𐬘":"b","𐬙":"n","𐬚":"m","𐬛":"y",
+            "𐬜":"v","𐬝":"r","𐬞":"l","𐬟":"s","𐬠":"z",
+            "𐬡":"š","𐬢":"h","𐬣":"ḵ","𐬤":"ẖ","𐬥":"‘",
+            "𐬦":"’","𐬧":"ń","𐬨":"ṇ","𐬩":"ḷ","𐬪":"ḹ",
+            "𐬫":"ṝ","𐬬":"ṛ","𐬰":"ž","𐬯":"š","𐬮":"l",
+            "𐬭":"r","𐬵":"h","𐬴":"š","𐬳":"š","𐬲":"z","𐬱":"š"
         };
 
         function playAudio() {
@@ -390,24 +335,19 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // دوال إدارة الخلفية
         function changeBackground(color) {
             document.body.style.background = color === 'white' ? 'white' : 'black';
         }
-
         function toggleBackgroundOptions() {
-            const options = document.getElementById('backgroundOptions');
-            options.style.display = options.style.display === 'none' ? 'block' : 'none';
+            const opts = document.getElementById("backgroundOptions");
+            opts.style.display = opts.style.display === "none" ? "block" : "none";
         }
-
         function triggerFileInput() {
-            document.getElementById('fileInput').click();
+            document.getElementById("fileInput").click();
         }
-
         function uploadImage(event) {
             const file = event.target.files[0];
             if (!file) return;
-            
             const reader = new FileReader();
             reader.onload = () => {
                 document.body.style.background = `url(${reader.result}) center/cover fixed`;
@@ -415,32 +355,27 @@
             reader.readAsDataURL(file);
         }
 
-        // دوال النسخ
         function showNotification() {
-            const notification = document.getElementById("copyNotification");
-            notification.style.display = "block";
-            setTimeout(() => notification.style.display = "none", 3000);
+            const n = document.getElementById("copyNotification");
+            n.style.display = "block";
+            setTimeout(() => n.style.display = "none", 3000);
         }
-
         function copyInputText() {
             const input = document.getElementById("inputText");
             input.select();
-            navigator.clipboard.writeText(input.value)
-                .then(showNotification)
+            navigator.clipboard.writeText(input.value).then(showNotification)
                 .catch(() => document.execCommand('copy') && showNotification());
         }
-
         function copyOutputText() {
             const text = document.getElementById("outputText").innerText;
-            navigator.clipboard.writeText(text)
-                .then(showNotification)
+            navigator.clipboard.writeText(text).then(showNotification)
                 .catch(() => {
-                    const textarea = document.createElement('textarea');
-                    textarea.value = text;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
+                    const t = document.createElement("textarea");
+                    t.value = text;
+                    document.body.appendChild(t);
+                    t.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(t);
                     showNotification();
                 });
         }
