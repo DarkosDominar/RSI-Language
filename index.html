@@ -262,17 +262,50 @@
             }
 
             const dynamicMap = generateDynamicMap(seed);
-            const words = cleanInput.split(/\s+/);
-            const translatedWords = words.map(word =>
-                word.split('').map(c => fixedSymbolMap[c] || dynamicMap[c] || c).join('')
-            );
-            if (translatedWords.length > 0) {
-                const randomIndex = Math.floor(Math.random() * (translatedWords.length + 1));
-                translatedWords.splice(randomIndex, 0, `${fixedSymbolMap["("]}${translatedTime}${fixedSymbolMap[")"]}`);
-            } else {
-                translatedWords.push(`${fixedSymbolMap["("]}${translatedTime}${fixedSymbolMap[")"]}`);
+            
+            // تم التعديل هنا للحفاظ على الفراغات والمسافات
+            const translatedText = cleanInput.split('').map(c => 
+                fixedSymbolMap[c] || dynamicMap[c] || c
+            ).join('');
+            
+            // إدراج الوقت بشكل عشوائي مع الحفاظ على الفراغات
+            // تحديد المواضع المناسبة للإدراج: بداية النص، بعد الفراغات، نهاية النص
+            const insertPositions = [0]; // بداية النص
+            // نمر على كل حرف لإيجاد الفراغات
+            for (let i = 0; i < translatedText.length; i++) {
+                if (/\s/.test(translatedText[i])) {
+                    // نهاية الفراغ (الموضع بعد الفراغ مباشرة) هو موضع جيد
+                    // لكننا نريد أن ندرج بعد الفراغ، لذلك نختار i+1
+                    if (i+1 <= translatedText.length) {
+                        insertPositions.push(i+1);
+                    }
+                }
             }
-            document.getElementById("outputText").innerText = translatedWords.join(' ');
+            // نهاية النص
+            insertPositions.push(translatedText.length);
+            
+            // اختيار موضع عشوائي
+            const randomIndex = Math.floor(Math.random() * insertPositions.length);
+            const insertPosition = insertPositions[randomIndex];
+            
+            // بناء النص مع إدراج الوقت في الموضع المختار
+            const before = translatedText.substring(0, insertPosition);
+            const after = translatedText.substring(insertPosition);
+            // ندرج الوقت مع مسافة قبل وبعد إذا لم يكن في البداية أو النهاية
+            let timeWithSpaces = `${fixedSymbolMap["("]}${translatedTime}${fixedSymbolMap[")"]}`;
+            if (insertPosition > 0 && insertPosition < translatedText.length) {
+                timeWithSpaces = ' ' + timeWithSpaces + ' ';
+            } else if (insertPosition === 0 && translatedText.length > 0) {
+                // إذا كان في البداية ونص بعدها، نضيف مسافة بعد الوقت
+                timeWithSpaces = timeWithSpaces + ' ';
+            } else if (insertPosition === translatedText.length && translatedText.length > 0) {
+                // إذا كان في النهاية، نضيف مسافة قبل الوقت
+                timeWithSpaces = ' ' + timeWithSpaces;
+            }
+            
+            const finalText = before + timeWithSpaces + after;
+            
+            document.getElementById("outputText").innerText = finalText;
         }
 
         function translateToArabic() {
@@ -304,10 +337,13 @@
                 acc[shuffled[index]] = char;
                 return acc;
             }, {});
+            
+            // تم التعديل هنا للحفاظ على الفراغات والمسافات
             let outputText = "";
             for (const char of cleanText) {
                 outputText += fixedReverseSymbolMap[char] || reverseMap[char] || char;
             }
+            
             document.getElementById("outputText").innerText = outputText;
         }
 
