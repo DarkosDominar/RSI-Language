@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RSI Language</title>
+    <title>RSI Language Translator</title>
     <style>
         #copyNotification {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             background-color: rgba(0, 0, 0, 0.7);
             color: #fff;
             padding: 10px 15px;
@@ -22,9 +23,9 @@
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 20px;
-            background: url('background.jpg') no-repeat center center fixed;
-            background-size: cover;
+            background: url('background.jpg') center/cover fixed;
             position: relative;
+            min-height: 100vh;
         }
 
         body::before {
@@ -40,36 +41,48 @@
 
         h1 {
             color: #fff;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
         }
 
         .text-container {
             position: relative;
             display: inline-block;
-            width: 80%;
+            width: 90%;
+            max-width: 700px;
             margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
         textarea {
             width: 100%;
-            height: 100px;
+            height: 120px;
             border-radius: 10px;
-            padding: 10px;
+            padding: 15px;
             font-size: 16px;
             box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
         }
 
         #outputText {
-            background: transparent;
-            padding: 10px;
-            min-height: 100px;
-            font-size: 16px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            min-height: 120px;
+            font-size: 18px;
             word-wrap: break-word;
             color: #fff;
+            border-radius: 10px;
+            text-align: right;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         button {
-            margin: 5px;
-            padding: 12px 25px;
+            margin: 10px;
+            padding: 12px 30px;
             font-size: 16px;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 8px;
@@ -84,11 +97,18 @@
             font-weight: bold;
         }
 
+        button:active {
+            transform: translateY(1px);
+            box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.1),
+                        inset -2px -2px 5px rgba(0, 0, 0, 0.8);
+        }
+
         button:hover {
             background: linear-gradient(145deg, #2c2c2c, #3a3a3a);
             box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.2),
                         inset -2px -2px 5px rgba(0, 0, 0, 0.9),
                         3px 3px 8px rgba(0, 0, 0, 0.8);
+            transform: translateY(-2px);
         }
 
         .translate-btn {
@@ -101,24 +121,25 @@
 
         .copy-icon {
             position: absolute;
-            bottom: 5px;
+            bottom: 10px;
             cursor: pointer;
             width: 24px;
             height: 24px;
+            transition: transform 0.2s;
+        }
+
+        .copy-icon:hover {
+            transform: scale(1.1);
         }
 
         .input-copy {
-            left: 5px;
+            left: 15px;
             fill: #000;
         }
 
         .output-copy {
-            right: 5px;
+            right: 15px;
             fill: #fff;
-        }
-
-        .copy-icon:hover {
-            opacity: 0.8;
         }
 
         .menu-icon {
@@ -129,12 +150,20 @@
             left: 20px;
             cursor: pointer;
             z-index: 999;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
         .background-options {
             display: none;
             position: fixed;
-            top: 60px;
+            top: 70px;
             left: 20px;
             background-color: rgba(0, 0, 0, 0.7);
             padding: 15px;
@@ -148,10 +177,265 @@
             background-color: #3498db;
             color: white;
         }
+        
+        /* أنماط جديدة للسجل */
+        #historyPanel {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 20px;
+            z-index: 1001;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        
+        #historyPanel.active {
+            right: 0;
+        }
+        
+        #historyHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        
+        #historyHeader h2 {
+            margin: 0;
+            color: #ff6b6b;
+            font-size: 24px;
+        }
+        
+        #historyClose {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+        }
+        
+        #searchContainer {
+            margin-bottom: 20px;
+        }
+        
+        #historySearch {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #555;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+        }
+        
+        #historySearch::placeholder {
+            color: #aaa;
+        }
+        
+        #filterOptions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .filter-btn {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #555;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn.active {
+            background: #ff6b6b;
+            border-color: #ff6b6b;
+        }
+        
+        .history-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            border-left: 4px solid #3498db;
+        }
+        
+        .history-item.selected {
+            background: rgba(52, 152, 219, 0.2);
+            border-left-color: #e74c3c;
+        }
+        
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .history-title {
+            font-weight: bold;
+            font-size: 18px;
+            color: #ff6b6b;
+            flex: 1;
+        }
+        
+        .history-date {
+            font-size: 14px;
+            color: #bbb;
+        }
+        
+        .history-direction {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+            margin: 5px 0;
+            background: rgba(52, 152, 219, 0.2);
+        }
+        
+        .history-preview {
+            font-size: 15px;
+            color: #ddd;
+            margin-top: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        #historyToggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(145deg, #1e1e1e, #2c2c2c);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        #historyToggle:hover {
+            background: linear-gradient(145deg, #2c2c2c, #3a3a3a);
+            transform: scale(1.05);
+        }
+        
+        .no-history {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .batch-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        
+        .action-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .export-btn {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .select-btn {
+            background: #3498db;
+            color: white;
+        }
+        
+        .title-input-container {
+            position: relative;
+            display: inline-block;
+            width: 90%;
+            max-width: 700px;
+            margin-bottom: 15px;
+        }
+        
+        #operationTitle {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+        }
+        
+        .selection-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 22px;
+            height: 22px;
+            border: 2px solid #3498db;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .history-item.selected .selection-indicator::after {
+            content: "✓";
+            color: #2ecc71;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        @media (min-width: 768px) {
+            #historyPanel {
+                width: 400px;
+                right: -400px;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>RSI Language</h1>
+    <h1>RSI Language Translator</h1>
+    
+    <div class="title-input-container">
+        <input type="text" id="operationTitle" placeholder="عنوان العملية (اختياري)">
+    </div>
     
     <div class="text-container input-container">
         <textarea id="inputText" placeholder="أدخل النص هنا..."></textarea>
@@ -161,9 +445,11 @@
         </svg>
     </div>
 
-    <button class="translate-btn" onclick="translateToAvestan()">Translate to RSI Language</button>
-    <button class="translate-btn" onclick="translateToArabic()">Translate to Arabic</button>
-    <button class="play-btn" onclick="playAudio()">Play Audio</button>
+    <div>
+        <button class="translate-btn" onclick="translateToAvestan()">Translate to RSI Language</button>
+        <button class="translate-btn" onclick="translateToArabic()">Translate to Arabic</button>
+        <button class="play-btn" onclick="playAudio()">Play Audio</button>
+    </div>
     
     <div class="text-container output-container">
         <p id="outputText"></p>
@@ -182,7 +468,41 @@
         <input type="file" id="fileInput" style="display:none" accept="image/*" onchange="uploadImage(event)">
     </div>
 
-    <div id="copyNotification">text copied</div>
+    <div id="copyNotification">تم نسخ النص</div>
+    
+    <!-- زر فتح/إغلاق سجل العمليات -->
+    <button id="historyToggle">📋</button>
+    
+    <!-- لوحة سجل العمليات -->
+    <div id="historyPanel">
+        <div id="historyHeader">
+            <h2>سجل عمليات الترجمة</h2>
+            <button id="historyClose">✕</button>
+        </div>
+        
+        <div id="searchContainer">
+            <input type="text" id="historySearch" placeholder="ابحث في السجل...">
+        </div>
+        
+        <div id="filterOptions">
+            <div class="filter-btn active" data-filter="all">الكل</div>
+            <div class="filter-btn" data-filter="title">العنوان</div>
+            <div class="filter-btn" data-filter="text">النص</div>
+            <div class="filter-btn" data-filter="toAvestan">إلى RSI Language</div>
+            <div class="filter-btn" data-filter="toArabic">إلى العربية</div>
+            <div class="filter-btn" data-filter="time">الوقت</div>
+        </div>
+        
+        <div id="historyList">
+            <!-- سيتم ملء هذا القسم بالعمليات من خلال الجافاسكريبت -->
+        </div>
+        
+        <div class="batch-actions">
+            <button id="selectAllBtn" class="action-btn select-btn">تحديد الكل</button>
+            <button id="deleteSelected" class="action-btn delete-btn">حذف المحدد</button>
+            <button id="exportSelected" class="action-btn export-btn">تصدير المحدد</button>
+        </div>
+    </div>
 
     <script>
         // الأحرف والخرائط الأساسية
@@ -206,6 +526,262 @@
             Object.entries(fixedSymbolMap).map(([k, v]) => [v, k])
         );
 
+        // تخزين محلي لسجل العمليات
+        let translationHistory = JSON.parse(localStorage.getItem('translationHistory')) || [];
+        let currentFilter = 'all';
+        let selectedItems = [];
+        let longPressTimer;
+        
+        // تهيئة سجل العمليات عند التحميل
+        window.addEventListener('DOMContentLoaded', () => {
+            renderHistory();
+            setupHistoryEvents();
+        });
+
+        // إعداد أحداث لوحة السجل
+        function setupHistoryEvents() {
+            // فتح وإغلاق لوحة السجل
+            document.getElementById('historyToggle').addEventListener('click', () => {
+                document.getElementById('historyPanel').classList.toggle('active');
+            });
+            
+            document.getElementById('historyClose').addEventListener('click', () => {
+                document.getElementById('historyPanel').classList.remove('active');
+            });
+            
+            // البحث في السجل
+            document.getElementById('historySearch').addEventListener('input', renderHistory);
+            
+            // تصفية النتائج
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    renderHistory();
+                });
+            });
+            
+            // تحديد جميع العناصر
+            document.getElementById('selectAllBtn').addEventListener('click', () => {
+                const historyItems = translationHistory.map(item => item.id);
+                if (selectedItems.length === historyItems.length) {
+                    selectedItems = [];
+                } else {
+                    selectedItems = [...historyItems];
+                }
+                renderHistory();
+            });
+            
+            // حذف العناصر المحددة
+            document.getElementById('deleteSelected').addEventListener('click', () => {
+                if (selectedItems.length === 0) {
+                    alert("يرجى تحديد عناصر للحذف أولاً");
+                    return;
+                }
+                
+                if (confirm(`هل تريد حذف ${selectedItems.length} عملية؟`)) {
+                    translationHistory = translationHistory.filter(item => !selectedItems.includes(item.id));
+                    localStorage.setItem('translationHistory', JSON.stringify(translationHistory));
+                    selectedItems = [];
+                    renderHistory();
+                }
+            });
+            
+            // تصدير العناصر المحددة
+            document.getElementById('exportSelected').addEventListener('click', () => {
+                if (selectedItems.length === 0) {
+                    alert("يرجى تحديد عناصر للتصدير أولاً");
+                    return;
+                }
+                
+                const selectedHistory = translationHistory.filter(item => selectedItems.includes(item.id));
+                const dataStr = JSON.stringify(selectedHistory, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'rsi_translation_history.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+            
+            // إعداد أحداث الضغط المطول
+            document.addEventListener('mousedown', startPress);
+            document.addEventListener('mouseup', endPress);
+            document.addEventListener('touchstart', startPress);
+            document.addEventListener('touchend', endPress);
+        }
+        
+        // بداية الضغط المطول
+        function startPress(e) {
+            const historyItem = e.target.closest('.history-item');
+            if (!historyItem) return;
+            
+            const itemId = historyItem.dataset.id;
+            longPressTimer = setTimeout(() => {
+                toggleItemSelection(itemId);
+            }, 600);
+        }
+        
+        // نهاية الضغط المطول
+        function endPress() {
+            clearTimeout(longPressTimer);
+        }
+        
+        // تحديد/إلغاء تحديد عنصر
+        function toggleItemSelection(itemId) {
+            const index = selectedItems.indexOf(itemId);
+            if (index === -1) {
+                selectedItems.push(itemId);
+            } else {
+                selectedItems.splice(index, 1);
+            }
+            renderHistory();
+        }
+        
+        // الحصول على الوقت التونسي
+        function getTunisianTime() {
+            const now = new Date();
+            // التوقيت التونسي (UTC+1)
+            return now.toLocaleString('ar-TN', {
+                timeZone: 'Africa/Tunis',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
+        // حفظ عملية الترجمة في السجل
+        function saveTranslation(inputText, outputText, direction) {
+            const title = document.getElementById('operationTitle').value || 
+                          `عملية ترجمة ${new Date().toLocaleTimeString('ar-TN', { timeZone: 'Africa/Tunis' })}`;
+            
+            const historyItem = {
+                id: Date.now().toString(),
+                title: title,
+                inputText: inputText,
+                outputText: outputText,
+                direction: direction,
+                timestamp: getTunisianTime()
+            };
+            
+            translationHistory.unshift(historyItem);
+            localStorage.setItem('translationHistory', JSON.stringify(translationHistory));
+            renderHistory();
+        }
+        
+        // عرض سجل العمليات مع التصفية
+        function renderHistory() {
+            const historyList = document.getElementById('historyList');
+            const searchTerm = document.getElementById('historySearch').value.toLowerCase();
+            
+            if (translationHistory.length === 0) {
+                historyList.innerHTML = '<div class="no-history">لا توجد عمليات سابقة</div>';
+                return;
+            }
+            
+            let filteredHistory = translationHistory;
+            
+            // تطبيق البحث والتصفية
+            if (searchTerm) {
+                filteredHistory = translationHistory.filter(item => {
+                    if (currentFilter === 'title') {
+                        return item.title.toLowerCase().includes(searchTerm);
+                    } else if (currentFilter === 'text') {
+                        return item.inputText.toLowerCase().includes(searchTerm) || 
+                               item.outputText.toLowerCase().includes(searchTerm);
+                    } else if (currentFilter === 'toAvestan') {
+                        return item.direction === 'toAvestan' && 
+                              (item.title.toLowerCase().includes(searchTerm) || 
+                               item.inputText.toLowerCase().includes(searchTerm) || 
+                               item.outputText.toLowerCase().includes(searchTerm));
+                    } else if (currentFilter === 'toArabic') {
+                        return item.direction === 'toArabic' && 
+                              (item.title.toLowerCase().includes(searchTerm) || 
+                               item.inputText.toLowerCase().includes(searchTerm) || 
+                               item.outputText.toLowerCase().includes(searchTerm));
+                    } else if (currentFilter === 'time') {
+                        return item.timestamp.toLowerCase().includes(searchTerm);
+                    } else {
+                        return item.title.toLowerCase().includes(searchTerm) || 
+                               item.inputText.toLowerCase().includes(searchTerm) || 
+                               item.outputText.toLowerCase().includes(searchTerm) ||
+                               item.timestamp.toLowerCase().includes(searchTerm);
+                    }
+                });
+            } else if (currentFilter !== 'all') {
+                filteredHistory = translationHistory.filter(item => {
+                    if (currentFilter === 'toAvestan') {
+                        return item.direction === 'toAvestan';
+                    } else if (currentFilter === 'toArabic') {
+                        return item.direction === 'toArabic';
+                    }
+                    return true;
+                });
+            }
+            
+            if (filteredHistory.length === 0) {
+                historyList.innerHTML = '<div class="no-history">لا توجد نتائج تطابق بحثك</div>';
+                return;
+            }
+            
+            historyList.innerHTML = filteredHistory.map(item => `
+                <div class="history-item ${selectedItems.includes(item.id) ? 'selected' : ''}" 
+                     data-id="${item.id}">
+                    <div class="selection-indicator"></div>
+                    <div class="item-header">
+                        <div class="history-title">${item.title}</div>
+                        <div class="history-date">${item.timestamp}</div>
+                    </div>
+                    <div class="history-direction ${item.direction}">
+                        ${item.direction === 'toAvestan' ? 'إلى RSI Language' : 'إلى العربية'}
+                    </div>
+                    <div class="history-preview">
+                        ${item.inputText.substring(0, 50)}${item.inputText.length > 50 ? '...' : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            // إضافة معالجات الأحداث لعناصر السجل
+            document.querySelectorAll('.history-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const historyId = item.dataset.id;
+                    
+                    // إذا كان العنصر محدداً، قم بإلغاء التحديد فقط
+                    if (selectedItems.includes(historyId)) {
+                        toggleItemSelection(historyId);
+                    } else {
+                        // إذا كان هناك عناصر محددة، أضف هذا العنصر للتحديد
+                        if (selectedItems.length > 0) {
+                            toggleItemSelection(historyId);
+                        } else {
+                            // إذا لم يكن هناك عناصر محددة، قم بتحميل العنصر
+                            loadHistoryItem(historyId);
+                        }
+                    }
+                });
+            });
+        }
+        
+        // تحميل عنصر السجل في الواجهة الرئيسية
+        function loadHistoryItem(itemId) {
+            const historyItem = translationHistory.find(i => i.id === itemId);
+            if (historyItem) {
+                document.getElementById('operationTitle').value = historyItem.title;
+                document.getElementById('inputText').value = historyItem.inputText;
+                document.getElementById('outputText').innerText = historyItem.outputText;
+                
+                // إغلاق لوحة السجل بعد التحديد
+                document.getElementById('historyPanel').classList.remove('active');
+            }
+        }
+        
         function seededRandom(seed) {
             let m = 0x80000000, a = 1103515245, c = 12345, state = seed;
             return function() {
@@ -213,6 +789,7 @@
                 return state / (m - 1);
             }
         }
+        
         function seededShuffle(array, seed) {
             let random = seededRandom(seed);
             let arr = [...array];
@@ -222,6 +799,7 @@
             }
             return arr;
         }
+        
         function generateDynamicMap(seed) {
             const shuffled = seededShuffle(avestanChars, seed);
             return arabicChars.reduce((acc, char, index) => {
@@ -232,6 +810,11 @@
 
         function translateToAvestan() {
             const inputText = document.getElementById("inputText").value;
+            if (!inputText.trim()) {
+                alert("الرجاء إدخال نص للترجمة");
+                return;
+            }
+            
             const customTimeMatch = inputText.match(/\((\d{2}:\d{2})\)/);
             let seed, originalTime, translatedTime, cleanInput;
             if (customTimeMatch) {
@@ -269,47 +852,43 @@
             ).join('');
             
             // إدراج الوقت بشكل عشوائي مع الحفاظ على الفراغات
-            // تحديد المواضع المناسبة للإدراج: بداية النص، بعد الفراغات، نهاية النص
-            const insertPositions = [0]; // بداية النص
-            // نمر على كل حرف لإيجاد الفراغات
+            const insertPositions = [0];
             for (let i = 0; i < translatedText.length; i++) {
                 if (/\s/.test(translatedText[i])) {
-                    // نهاية الفراغ (الموضع بعد الفراغ مباشرة) هو موضع جيد
-                    // لكننا نريد أن ندرج بعد الفراغ، لذلك نختار i+1
                     if (i+1 <= translatedText.length) {
                         insertPositions.push(i+1);
                     }
                 }
             }
-            // نهاية النص
             insertPositions.push(translatedText.length);
             
-            // اختيار موضع عشوائي
             const randomIndex = Math.floor(Math.random() * insertPositions.length);
             const insertPosition = insertPositions[randomIndex];
             
-            // بناء النص مع إدراج الوقت في الموضع المختار
-            const before = translatedText.substring(0, insertPosition);
-            const after = translatedText.substring(insertPosition);
-            // ندرج الوقت مع مسافة قبل وبعد إذا لم يكن في البداية أو النهاية
             let timeWithSpaces = `${fixedSymbolMap["("]}${translatedTime}${fixedSymbolMap[")"]}`;
             if (insertPosition > 0 && insertPosition < translatedText.length) {
                 timeWithSpaces = ' ' + timeWithSpaces + ' ';
             } else if (insertPosition === 0 && translatedText.length > 0) {
-                // إذا كان في البداية ونص بعدها، نضيف مسافة بعد الوقت
                 timeWithSpaces = timeWithSpaces + ' ';
             } else if (insertPosition === translatedText.length && translatedText.length > 0) {
-                // إذا كان في النهاية، نضيف مسافة قبل الوقت
                 timeWithSpaces = ' ' + timeWithSpaces;
             }
             
-            const finalText = before + timeWithSpaces + after;
+            const finalText = translatedText.substring(0, insertPosition) + timeWithSpaces + translatedText.substring(insertPosition);
             
             document.getElementById("outputText").innerText = finalText;
+            
+            // حفظ العملية في السجل
+            saveTranslation(inputText, finalText, 'toAvestan');
         }
 
         function translateToArabic() {
             const inputText = document.getElementById("inputText").value.trim();
+            if (!inputText) {
+                alert("الرجاء إدخال نص للترجمة");
+                return;
+            }
+            
             const timeRegex = new RegExp(`${fixedSymbolMap["("]}[\\uD800-\\uDBFF\\uDC00-\\uDFFF]+${fixedSymbolMap[")"]}`);
             const timeMatch = inputText.match(timeRegex);
             let seed, cleanText = inputText;
@@ -325,7 +904,7 @@
                     seed = hours * 60 + minutes;
                     cleanText = inputText.replace(timeRegex, '').trim();
                 } else {
-                    alert("النص غير صحيح🔴❌");
+                    alert("النص غير صحيح");
                     return;
                 }
             } else {
@@ -345,6 +924,9 @@
             }
             
             document.getElementById("outputText").innerText = outputText;
+            
+            // حفظ العملية في السجل
+            saveTranslation(inputText, outputText, 'toArabic');
         }
 
         const avestanPronunciation = {
@@ -360,12 +942,23 @@
 
         function playAudio() {
             const text = document.getElementById("outputText").innerText;
+            if (!text.trim()) {
+                alert("لا يوجد نص لقراءته");
+                return;
+            }
+            
             const timeRegex = new RegExp(`${fixedSymbolMap["("]}[\\uD800-\\uDBFF\\uDC00-\\uDFFF]+${fixedSymbolMap[")"]}`, 'g');
             const cleanText = text.replace(timeRegex, '').trim();
             let pronunciation = "";
             for (const char of cleanText) {
                 pronunciation += avestanPronunciation[char] || (/[\u0600-\u06FF]/.test(char) ? char : "");
             }
+            
+            if (!pronunciation.trim()) {
+                alert("لا يوجد نص قابل للقراءة");
+                return;
+            }
+            
             const utterance = new SpeechSynthesisUtterance(pronunciation);
             utterance.lang = "ar";
             window.speechSynthesis.speak(utterance);
@@ -374,13 +967,16 @@
         function changeBackground(color) {
             document.body.style.background = color === 'white' ? 'white' : 'black';
         }
+        
         function toggleBackgroundOptions() {
             const opts = document.getElementById("backgroundOptions");
             opts.style.display = opts.style.display === "none" ? "block" : "none";
         }
+        
         function triggerFileInput() {
             document.getElementById("fileInput").click();
         }
+        
         function uploadImage(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -396,12 +992,14 @@
             n.style.display = "block";
             setTimeout(() => n.style.display = "none", 3000);
         }
+        
         function copyInputText() {
             const input = document.getElementById("inputText");
             input.select();
             navigator.clipboard.writeText(input.value).then(showNotification)
                 .catch(() => document.execCommand('copy') && showNotification());
         }
+        
         function copyOutputText() {
             const text = document.getElementById("outputText").innerText;
             navigator.clipboard.writeText(text).then(showNotification)
