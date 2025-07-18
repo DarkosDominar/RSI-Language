@@ -1,31 +1,56 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RSI Language Translator</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
+        :root {
+            --primary-color: #1a2a6c;
+            --secondary-color: #b21f1f;
+            --dark-bg: rgba(0, 0, 0, 0.8);
+            --light-text: #ffffff;
+            --accent-color: #ff6b6b;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
         #copyNotification {
             position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 10px 15px;
-            border-radius: 5px;
+            top: 20px;
+            right: 20px;
+            background-color: var(--dark-bg);
+            color: var(--light-text);
+            padding: 12px 25px;
+            border-radius: 8px;
             display: none;
             z-index: 1000;
-            font-size: 14px;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            10%, 90% { opacity: 1; }
         }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             text-align: center;
             padding: 20px;
-            background: url('background.jpg') center/cover fixed;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
             position: relative;
             min-height: 100vh;
+            color: var(--light-text);
+            overflow-x: hidden;
         }
 
         body::before {
@@ -35,14 +60,37 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.6);
             z-index: -1;
         }
 
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5%;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
         h1 {
-            color: #fff;
-            text-shadow: 0 0 10px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
+            color: var(--light-text);
+            text-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            font-size: 2.2rem;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, #ff6b6b, #fdbb2d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px;
         }
 
         .text-container {
@@ -50,55 +98,77 @@
             display: inline-block;
             width: 90%;
             max-width: 700px;
-            margin-bottom: 20px;
-            background: rgba(0, 0, 0, 0.6);
+            margin: 20px auto;
+            background: var(--dark-bg);
             border-radius: 15px;
             padding: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         textarea {
             width: 100%;
-            height: 120px;
-            border-radius: 10px;
-            padding: 15px;
-            font-size: 16px;
+            height: 150px;
+            border-radius: 12px;
+            padding: 18px;
+            font-size: 18px;
             box-sizing: border-box;
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid #ddd;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #ddd;
+            font-family: inherit;
+            transition: all 0.3s;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
         }
 
         #outputText {
             background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            min-height: 120px;
-            font-size: 18px;
+            padding: 20px;
+            min-height: 150px;
+            font-size: 20px;
             word-wrap: break-word;
-            color: #fff;
-            border-radius: 10px;
+            color: var(--light-text);
+            border-radius: 12px;
             text-align: right;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            line-height: 1.6;
+        }
+
+        .buttons-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 25px 0;
         }
 
         button {
-            margin: 10px;
-            padding: 12px 30px;
-            font-size: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
+            margin: 0;
+            padding: 14px 35px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
             cursor: pointer;
-            transition: 0.3s;
+            transition: all 0.3s;
             background: linear-gradient(145deg, #1e1e1e, #2c2c2c);
             box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.1),
                         inset -2px -2px 5px rgba(0, 0, 0, 0.8),
-                        3px 3px 5px rgba(0, 0, 0, 0.6);
-            color: #ffffff;
+                        3px 3px 8px rgba(0, 0, 0, 0.6);
+            color: var(--light-text);
             text-transform: uppercase;
             font-weight: bold;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
         }
 
         button:active {
-            transform: translateY(1px);
+            transform: translateY(2px);
             box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.1),
                         inset -2px -2px 5px rgba(0, 0, 0, 0.8);
         }
@@ -107,75 +177,107 @@
             background: linear-gradient(145deg, #2c2c2c, #3a3a3a);
             box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.2),
                         inset -2px -2px 5px rgba(0, 0, 0, 0.9),
-                        3px 3px 8px rgba(0, 0, 0, 0.8);
-            transform: translateY(-2px);
+                        3px 3px 10px rgba(0, 0, 0, 0.8);
+            transform: translateY(-3px);
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        button:hover::after {
+            transform: translateX(0);
         }
 
         .translate-btn {
-            background: linear-gradient(145deg, #1e1e1e, #252525);
+            background: linear-gradient(145deg, var(--primary-color), #252525);
         }
 
         .play-btn {
-            background: linear-gradient(145deg, #400000, #700000);
+            background: linear-gradient(145deg, #700000, #400000);
+        }
+        
+        .ocr-btn {
+            background: linear-gradient(145deg, var(--primary-color), var(--secondary-color));
         }
 
         .copy-icon {
             position: absolute;
-            bottom: 10px;
+            bottom: 15px;
             cursor: pointer;
-            width: 24px;
-            height: 24px;
-            transition: transform 0.2s;
+            width: 28px;
+            height: 28px;
+            transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            padding: 5px;
         }
 
         .copy-icon:hover {
-            transform: scale(1.1);
+            transform: scale(1.15);
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .input-copy {
-            left: 15px;
-            fill: #000;
+            left: 20px;
         }
 
         .output-copy {
-            right: 15px;
-            fill: #fff;
+            right: 20px;
         }
 
         .menu-icon {
-            font-size: 30px;
+            font-size: 32px;
             color: white;
             position: fixed;
-            top: 20px;
-            left: 20px;
+            top: 25px;
+            left: 25px;
             cursor: pointer;
             z-index: 999;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.6);
             border-radius: 50%;
-            width: 45px;
-            height: 45px;
+            width: 50px;
+            height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s;
         }
 
-        .background-options {
+        .menu-icon:hover {
+            transform: scale(1.1);
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .side-menu {
             display: none;
             position: fixed;
-            top: 70px;
-            left: 20px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 5px;
+            top: 85px;
+            left: 25px;
+            background-color: var(--dark-bg);
+            padding: 20px;
+            border-radius: 10px;
             z-index: 998;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            width: 220px;
         }
 
-        .background-options button {
+        .side-menu button {
             display: block;
-            margin: 5px 0;
-            background-color: #3498db;
-            color: white;
+            margin: 15px 0;
+            width: 100%;
+            text-align: center;
+            padding: 12px;
+            font-size: 18px;
         }
         
         /* أنماط جديدة للسجل */
@@ -185,13 +287,14 @@
             right: -100%;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.95);
+            background: var(--dark-bg);
             color: white;
-            padding: 20px;
+            padding: 25px;
             z-index: 1001;
-            transition: right 0.3s ease;
+            transition: right 0.4s ease;
             overflow-y: auto;
             box-sizing: border-box;
+            backdrop-filter: blur(10px);
         }
         
         #historyPanel.active {
@@ -202,38 +305,51 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #444;
-            padding-bottom: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #444;
+            padding-bottom: 15px;
         }
         
         #historyHeader h2 {
             margin: 0;
-            color: #ff6b6b;
-            font-size: 24px;
+            color: var(--accent-color);
+            font-size: 28px;
         }
         
         #historyClose {
             background: none;
             border: none;
             color: white;
-            font-size: 24px;
+            font-size: 32px;
             cursor: pointer;
             padding: 5px;
+            transition: all 0.3s;
+        }
+        
+        #historyClose:hover {
+            color: var(--accent-color);
+            transform: scale(1.1);
         }
         
         #searchContainer {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
         
         #historySearch {
             width: 100%;
-            padding: 12px;
+            padding: 15px;
             background: rgba(255, 255, 255, 0.1);
-            border: 1px solid #555;
-            border-radius: 5px;
+            border: 2px solid #555;
+            border-radius: 10px;
             color: white;
-            font-size: 16px;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+        
+        #historySearch:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+            outline: none;
         }
         
         #historySearch::placeholder {
@@ -243,97 +359,111 @@
         #filterOptions {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 12px;
+            margin-top: 20px;
+            justify-content: center;
         }
         
         .filter-btn {
-            padding: 8px 15px;
+            padding: 10px 20px;
             background: rgba(255, 255, 255, 0.1);
-            border: 1px solid #555;
-            border-radius: 5px;
+            border: 2px solid #555;
+            border-radius: 8px;
             color: white;
             cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
+            font-size: 16px;
+            transition: all 0.3s;
         }
         
-        .filter-btn.active {
-            background: #ff6b6b;
-            border-color: #ff6b6b;
+        .filter-btn.active, .filter-btn:hover {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            transform: translateY(-3px);
         }
         
         .history-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
             cursor: pointer;
             transition: all 0.3s;
             position: relative;
-            border-left: 4px solid #3498db;
+            border-left: 5px solid var(--primary-color);
         }
         
         .history-item.selected {
             background: rgba(52, 152, 219, 0.2);
-            border-left-color: #e74c3c;
+            border-left-color: var(--accent-color);
         }
         
         .history-item:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-5px);
         }
         
         .item-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
+            align-items: center;
         }
         
         .history-title {
             font-weight: bold;
-            font-size: 18px;
-            color: #ff6b6b;
+            font-size: 20px;
+            color: var(--accent-color);
             flex: 1;
         }
         
         .history-date {
-            font-size: 14px;
+            font-size: 16px;
             color: #bbb;
+            min-width: 150px;
+            text-align: left;
         }
         
         .history-direction {
             display: inline-block;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 14px;
-            margin: 5px 0;
-            background: rgba(52, 152, 219, 0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 16px;
+            margin: 8px 0;
+            background: rgba(52, 152, 219, 0.25);
         }
         
         .history-preview {
-            font-size: 15px;
+            font-size: 17px;
             color: #ddd;
-            margin-top: 10px;
+            margin-top: 12px;
             overflow: hidden;
             text-overflow: ellipsis;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
+            line-height: 1.5;
+        }
+        
+        .history-ocr-icon {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 20px;
         }
         
         #historyToggle {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(145deg, #1e1e1e, #2c2c2c);
+            top: 25px;
+            right: 25px;
+            background: linear-gradient(145deg, var(--primary-color), #2c2c2c);
             color: white;
             border: none;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 20px;
+            width: 65px;
+            height: 65px;
+            font-size: 24px;
             cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
             z-index: 1000;
             display: flex;
             align-items: center;
@@ -343,43 +473,54 @@
         
         #historyToggle:hover {
             background: linear-gradient(145deg, #2c2c2c, #3a3a3a);
-            transform: scale(1.05);
+            transform: scale(1.08);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.5);
         }
         
         .no-history {
             text-align: center;
-            padding: 30px;
-            color: #666;
+            padding: 40px;
+            color: #777;
             font-style: italic;
+            font-size: 18px;
         }
         
         .batch-actions {
             display: flex;
-            gap: 15px;
-            margin-top: 20px;
+            gap: 20px;
+            margin-top: 30px;
             justify-content: center;
+            flex-wrap: wrap;
         }
         
         .action-btn {
-            padding: 10px 20px;
-            border-radius: 8px;
+            padding: 12px 25px;
+            border-radius: 10px;
             font-weight: 600;
             cursor: pointer;
             border: none;
+            font-size: 16px;
+            transition: all 0.3s;
+            min-width: 180px;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
         
         .delete-btn {
-            background: #e74c3c;
+            background: var(--error-color);
             color: white;
         }
         
         .export-btn {
-            background: #2ecc71;
+            background: var(--success-color);
             color: white;
         }
         
         .select-btn {
-            background: #3498db;
+            background: var(--primary-color);
             color: white;
         }
         
@@ -388,26 +529,33 @@
             display: inline-block;
             width: 90%;
             max-width: 700px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         
         #operationTitle {
             width: 100%;
-            padding: 12px;
-            border-radius: 10px;
-            font-size: 16px;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 18px;
             box-sizing: border-box;
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid #ddd;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #ddd;
+            transition: all 0.3s;
+        }
+        
+        #operationTitle:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+            outline: none;
         }
         
         .selection-indicator {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 22px;
-            height: 22px;
-            border: 2px solid #3498db;
+            top: 15px;
+            right: 15px;
+            width: 25px;
+            height: 25px;
+            border: 2px solid var(--primary-color);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -417,61 +565,467 @@
         
         .history-item.selected .selection-indicator::after {
             content: "✓";
-            color: #2ecc71;
+            color: var(--success-color);
             font-weight: bold;
+            font-size: 18px;
+        }
+        
+        /* OCR Modal Styles */
+        .ocr-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            z-index: 1002;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+        }
+        
+        .ocr-modal-content {
+            background: var(--dark-bg);
+            border: 2px solid var(--primary-color);
+            border-radius: 20px;
+            padding: 30px;
+            width: 95%;
+            max-width: 800px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+            position: relative;
+        }
+        
+        .ocr-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .ocr-modal-title {
+            color: var(--accent-color);
+            font-size: 28px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .ocr-modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 36px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .ocr-modal-close:hover {
+            color: var(--accent-color);
+            transform: scale(1.1);
+        }
+        
+        #ocrFileInput {
+            display: none;
+        }
+        
+        #ocrPreview {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 15px;
+            margin: 20px auto;
+            display: none;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--primary-color);
+        }
+        
+        #ocrResult {
+            margin-top: 25px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: white;
+            min-height: 100px;
+            text-align: right;
+            display: none;
+            font-size: 18px;
+            line-height: 1.6;
+            border: 2px solid var(--primary-color);
+            overflow-y: auto;
+            max-height: 300px;
+        }
+        
+        .ocr-actions {
+            margin-top: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .ocr-btn {
+            flex: 1;
+            min-width: 180px;
+            padding: 15px;
+            font-size: 18px;
+        }
+        
+        .time-option {
+            margin-top: 25px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .time-option label {
+            color: white;
+            margin-right: 15px;
+            font-size: 18px;
+            display: block;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+        
+        .time-option input {
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid var(--primary-color);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            width: 150px;
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .time-type {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+        }
+        
+        .time-type label {
+            display: flex;
+            align-items: center;
+            font-weight: normal;
+            margin: 0;
+        }
+        
+        .time-type input {
+            margin-left: 8px;
+            width: auto;
+        }
+        
+        .progress-container {
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: white;
+            margin-top: 10px;
             font-size: 16px;
+        }
+        
+        .translated-image-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px 0;
+            width: 100%;
+        }
+        
+        .translated-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--primary-color);
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .translated-text-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 15px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .translated-image-container:hover .translated-text-overlay {
+            opacity: 1;
+        }
+        
+        .overlay-text {
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            max-width: 100%;
+            word-wrap: break-word;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+        
+        .download-translated-btn {
+            margin-top: 20px;
+        }
+        
+        .ocr-result-container {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .ocr-copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .ocr-copy-btn:hover {
+            background: rgba(0, 0, 0, 0.7);
+            transform: scale(1.1);
+        }
+        
+        .gallery-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1003;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .gallery-title {
+            color: var(--accent-color);
+            font-size: 28px;
+        }
+        
+        .gallery-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 32px;
+            cursor: pointer;
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .gallery-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s;
+            position: relative;
+        }
+        
+        .gallery-item:hover {
+            transform: scale(1.05);
+        }
+        
+        .gallery-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .gallery-item p {
+            padding: 10px;
+            text-align: center;
+            font-size: 16px;
+            color: #ddd;
+        }
+        
+        .gallery-delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 0, 0, 0.7);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .gallery-delete-btn:hover {
+            background: rgba(255, 0, 0, 0.9);
+            transform: scale(1.1);
+        }
+        
+        .background-options {
+            display: none;
+            position: fixed;
+            top: 85px;
+            left: 25px;
+            background-color: var(--dark-bg);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 998;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .background-options button {
+            display: block;
+            margin: 10px 0;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            width: 100%;
+        }
+        
+        .layout-preserved {
+            white-space: pre-wrap;
+            font-family: monospace;
+            text-align: left;
         }
         
         @media (min-width: 768px) {
             #historyPanel {
-                width: 400px;
-                right: -400px;
+                width: 450px;
+                right: -450px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .buttons-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 90%;
+                max-width: 350px;
+            }
+            
+            .ocr-actions {
+                flex-direction: column;
+            }
+            
+            .batch-actions {
+                flex-direction: column;
+            }
+            
+            .action-btn {
+                width: 100%;
+            }
+            
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+                margin-bottom: 15px;
             }
         }
     </style>
 </head>
 <body>
-    <h1>RSI Language Translator</h1>
-    
-    <div class="title-input-container">
-        <input type="text" id="operationTitle" placeholder="عنوان العملية (اختياري)">
+    <div class="header">
+        <h1>RSI Language Translator</h1>
     </div>
     
-    <div class="text-container input-container">
-        <textarea id="inputText" placeholder="أدخل النص هنا..."></textarea>
-        <svg class="copy-icon input-copy" onclick="copyInputText()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill="none" d="M0 0h24v24H0z"/>
-            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-        </svg>
+    <div class="container">
+        <div class="title-input-container">
+            <input type="text" id="operationTitle" placeholder="عنوان العملية (اختياري)">
+        </div>
+        
+        <div class="text-container input-container">
+            <textarea id="inputText" placeholder="أدخل النص هنا..."></textarea>
+            <svg class="copy-icon input-copy" onclick="copyInputText()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+            </svg>
+        </div>
+
+        <div class="buttons-container">
+            <button class="translate-btn" onclick="translateToAvestan()">الترجمة إلى RSI Language</button>
+            <button class="translate-btn" onclick="translateToArabic()">ترجمة إلى العربية</button>
+            <button class="play-btn" onclick="playAudio()">تشغيل الصوت</button>
+            <button class="ocr-btn" onclick="openOcrModal()">ترجمة من صورة</button>
+        </div>
+        
+        <div class="text-container output-container">
+            <p id="outputText"></p>
+            <svg class="copy-icon output-copy" onclick="copyOutputText()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+            </svg>
+        </div>
     </div>
 
-    <div>
-        <button class="translate-btn" onclick="translateToAvestan()">Translate to RSI Language</button>
-        <button class="translate-btn" onclick="translateToArabic()">Translate to Arabic</button>
-        <button class="play-btn" onclick="playAudio()">Play Audio</button>
-    </div>
+    <div class="menu-icon" onclick="toggleSideMenu()">☰</div>
     
-    <div class="text-container output-container">
-        <p id="outputText"></p>
-        <svg class="copy-icon output-copy" onclick="copyOutputText()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill="none" d="M0 0h24v24H0z"/>
-            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-        </svg>
+    <!-- القائمة الجانبية -->
+    <div class="side-menu" id="sideMenu">
+        <button onclick="showHistory()">📋 سجل الترجمة</button>
+        <button onclick="showGallery()">🖼️ مكتبة الصور</button>
+        <button onclick="showBackgroundOptions()">🎨 خيارات الخلفية</button>
     </div>
-
-    <div class="menu-icon" onclick="toggleBackgroundOptions()">☰</div>
     
     <div class="background-options" id="backgroundOptions">
-        <button onclick="changeBackground('white')">White Background</button>
-        <button onclick="changeBackground('black')">Black Background</button>
-        <button onclick="triggerFileInput()">Choose Background Image</button>
+        <button onclick="changeBackground('white')">خلفية بيضاء</button>
+        <button onclick="changeBackground('black')">خلفية سوداء</button>
+        <button onclick="triggerFileInput()">اختيار صورة للخلفية</button>
         <input type="file" id="fileInput" style="display:none" accept="image/*" onchange="uploadImage(event)">
     </div>
 
-    <div id="copyNotification">تم نسخ النص</div>
-    
-    <!-- زر فتح/إغلاق سجل العمليات -->
-    <button id="historyToggle">📋</button>
+    <div id="copyNotification">تم نسخ النص بنجاح!</div>
     
     <!-- لوحة سجل العمليات -->
     <div id="historyPanel">
@@ -488,7 +1042,7 @@
             <div class="filter-btn active" data-filter="all">الكل</div>
             <div class="filter-btn" data-filter="title">العنوان</div>
             <div class="filter-btn" data-filter="text">النص</div>
-            <div class="filter-btn" data-filter="toAvestan">إلى RSI Language</div>
+            <div class="filter-btn" data-filter="toAvestan">إلى اللغة الأفستانية</div>
             <div class="filter-btn" data-filter="toArabic">إلى العربية</div>
             <div class="filter-btn" data-filter="time">الوقت</div>
         </div>
@@ -501,6 +1055,73 @@
             <button id="selectAllBtn" class="action-btn select-btn">تحديد الكل</button>
             <button id="deleteSelected" class="action-btn delete-btn">حذف المحدد</button>
             <button id="exportSelected" class="action-btn export-btn">تصدير المحدد</button>
+        </div>
+    </div>
+    
+    <!-- OCR Modal -->
+    <div class="ocr-modal" id="ocrModal">
+        <div class="ocr-modal-content">
+            <div class="ocr-modal-header">
+                <h2 class="ocr-modal-title">ترجمة من صورة</h2>
+                <button class="ocr-modal-close" onclick="closeOcrModal()">×</button>
+            </div>
+            
+            <div>
+                <input type="file" id="ocrFileInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                <button class="ocr-btn" onclick="document.getElementById('ocrFileInput').click()">اختيار صورة</button>
+                <button class="ocr-btn" id="cameraBtn" onclick="openCamera()">فتح الكاميرا</button>
+            </div>
+            
+            <img id="ocrPreview" alt="Preview">
+            
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+                <div class="progress-text" id="progressText">جاري التعرف على النص: 0%</div>
+            </div>
+            
+            <div class="time-option">
+                <label for="customTime">الوقت (اختياري):</label>
+                <input type="text" id="customTime" placeholder="00:00:00" maxlength="8">
+                <div class="time-type">
+                    <label>
+                        <input type="radio" name="timeType" value="arabic" checked> عربي
+                    </label>
+                    <label>
+                        <input type="radio" name="timeType" value="avestan"> أفستاني
+                    </label>
+                </div>
+            </div>
+            
+            <div class="ocr-result-container">
+                <div id="ocrResult"></div>
+                <button class="ocr-copy-btn" onclick="copyOcrResult()">📋</button>
+            </div>
+            
+            <div class="ocr-actions">
+                <button class="ocr-btn" id="recognizeBtn" onclick="recognizeText()">التعرف على النص</button>
+                <button class="ocr-btn" onclick="useOcrResult()">استخدام النص</button>
+                <button class="ocr-btn" onclick="directTranslate()">ترجمة مباشرة</button>
+                <button class="ocr-btn" onclick="translateAndOverlay()">ترجمة على الصورة</button>
+                <button class="ocr-btn download-translated-btn" onclick="downloadTranslatedImage()" style="display:none">تحميل الصورة المترجمة</button>
+            </div>
+            
+            <div class="translated-image-container" id="translatedImageContainer" style="display:none">
+                <img id="translatedImage" class="translated-image" alt="Translated Image">
+                <div class="translated-text-overlay">
+                    <div class="overlay-text" id="overlayText"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- معرض الصور المترجمة -->
+    <div class="gallery-container" id="galleryContainer">
+        <div class="gallery-header">
+            <h2 class="gallery-title">مكتبة الصور المترجمة</h2>
+            <button class="gallery-close" onclick="toggleGallery()">✕</button>
+        </div>
+        <div class="gallery-grid" id="galleryGrid">
+            <!-- سيتم ملء هذا القسم بالصور المترجمة -->
         </div>
     </div>
 
@@ -527,24 +1148,25 @@
         );
 
         // تخزين محلي لسجل العمليات
-        let translationHistory = JSON.parse(localStorage.getItem('translationHistory')) || [];
+        let translationHistory = [];
         let currentFilter = 'all';
         let selectedItems = [];
         let longPressTimer;
-        
-        // تهيئة سجل العمليات عند التحميل
+        let currentOcrImage = null;
+        let translatedTextForImage = '';
+        let translatedImageData = '';
+        let ocrBlocks = [];
+        let translatedImages = [];
+
+        // تهيئة التطبيق عند التحميل
         window.addEventListener('DOMContentLoaded', () => {
-            renderHistory();
             setupHistoryEvents();
+            renderGallery();
         });
 
         // إعداد أحداث لوحة السجل
         function setupHistoryEvents() {
             // فتح وإغلاق لوحة السجل
-            document.getElementById('historyToggle').addEventListener('click', () => {
-                document.getElementById('historyPanel').classList.toggle('active');
-            });
-            
             document.getElementById('historyClose').addEventListener('click', () => {
                 document.getElementById('historyPanel').classList.remove('active');
             });
@@ -642,15 +1264,12 @@
             renderHistory();
         }
         
-        // الحصول على الوقت التونسي
+        // الحصول على الوقت التونسي مع الثواني
         function getTunisianTime() {
             const now = new Date();
             // التوقيت التونسي (UTC+1)
             return now.toLocaleString('ar-TN', {
                 timeZone: 'Africa/Tunis',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit'
@@ -658,7 +1277,7 @@
         }
         
         // حفظ عملية الترجمة في السجل
-        function saveTranslation(inputText, outputText, direction) {
+        function saveTranslation(inputText, outputText, direction, imageData = null) {
             const title = document.getElementById('operationTitle').value || 
                           `عملية ترجمة ${new Date().toLocaleTimeString('ar-TN', { timeZone: 'Africa/Tunis' })}`;
             
@@ -668,7 +1287,9 @@
                 inputText: inputText,
                 outputText: outputText,
                 direction: direction,
-                timestamp: getTunisianTime()
+                timestamp: getTunisianTime(),
+                type: imageData ? 'ocr' : 'text',
+                imageData: imageData
             };
             
             translationHistory.unshift(historyItem);
@@ -735,12 +1356,14 @@
                 <div class="history-item ${selectedItems.includes(item.id) ? 'selected' : ''}" 
                      data-id="${item.id}">
                     <div class="selection-indicator"></div>
+                    ${item.type === 'ocr' ? '<div class="history-ocr-icon">📷</div>' : ''}
                     <div class="item-header">
                         <div class="history-title">${item.title}</div>
                         <div class="history-date">${item.timestamp}</div>
                     </div>
                     <div class="history-direction ${item.direction}">
-                        ${item.direction === 'toAvestan' ? 'إلى RSI Language' : 'إلى العربية'}
+                        ${item.direction === 'toAvestan' ? 'إلى اللغة الأفستانية' : 'إلى العربية'}
+                        ${item.type === 'ocr' ? ' (صورة)' : ''}
                     </div>
                     <div class="history-preview">
                         ${item.inputText.substring(0, 50)}${item.inputText.length > 50 ? '...' : ''}
@@ -809,25 +1432,21 @@
         }
 
         function translateToAvestan() {
-            const inputText = document.getElementById("inputText").value;
-            if (!inputText.trim()) {
-                alert("الرجاء إدخال نص للترجمة");
-                return;
-            }
-            
-            const customTimeMatch = inputText.match(/\((\d{2}:\d{2})\)/);
+            let inputText = document.getElementById("inputText").value;
+            const customTimeMatch = inputText.match(/\((\d{2}:\d{2}:\d{2})\)/);
             let seed, originalTime, translatedTime, cleanInput;
             if (customTimeMatch) {
-                const [h, m] = customTimeMatch[1].split(':');
-                const hours = parseInt(h), minutes = parseInt(m);
-                if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
-                    seed = hours * 60 + minutes;
-                    originalTime = `${h.padStart(2,'0')}:${m.padStart(2,'0')}`;
+                const [h, m, s] = customTimeMatch[1].split(':');
+                const hours = parseInt(h), minutes = parseInt(m), seconds = parseInt(s);
+                if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59 && seconds >= 0 && seconds <= 59) {
+                    seed = hours * 3600 + minutes * 60 + seconds;
+                    originalTime = `${h.padStart(2,'0')}:${m.padStart(2,'0')}:${s.padStart(2,'0')}`;
                 } else {
                     const now = new Date();
-                    seed = now.getUTCHours() * 60 + now.getUTCMinutes();
+                    seed = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
                     originalTime = now.getUTCHours().toString().padStart(2,'0') +
-                                   ':' + now.getUTCMinutes().toString().padStart(2,'0');
+                                   ':' + now.getUTCMinutes().toString().padStart(2,'0') +
+                                   ':' + now.getUTCSeconds().toString().padStart(2,'0');
                 }
                 translatedTime = originalTime.split('').map(c =>
                     fixedSymbolMap[c] || c
@@ -835,9 +1454,10 @@
                 cleanInput = inputText.replace(customTimeMatch[0], '').trim();
             } else {
                 const now = new Date();
-                seed = now.getUTCHours() * 60 + now.getUTCMinutes();
+                seed = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
                 originalTime = now.getUTCHours().toString().padStart(2,'0') +
-                               ':' + now.getUTCMinutes().toString().padStart(2,'0');
+                               ':' + now.getUTCMinutes().toString().padStart(2,'0') +
+                               ':' + now.getUTCSeconds().toString().padStart(2,'0');
                 translatedTime = originalTime.split('').map(c =>
                     fixedSymbolMap[c] || c
                 ).join('');
@@ -883,12 +1503,7 @@
         }
 
         function translateToArabic() {
-            const inputText = document.getElementById("inputText").value.trim();
-            if (!inputText) {
-                alert("الرجاء إدخال نص للترجمة");
-                return;
-            }
-            
+            const inputText = document.getElementById("inputText").value;
             const timeRegex = new RegExp(`${fixedSymbolMap["("]}[\\uD800-\\uDBFF\\uDC00-\\uDFFF]+${fixedSymbolMap[")"]}`);
             const timeMatch = inputText.match(timeRegex);
             let seed, cleanText = inputText;
@@ -898,10 +1513,11 @@
                 for (const char of timePart) {
                     originalTime += fixedReverseSymbolMap[char] || char;
                 }
-                const [hStr, mStr] = originalTime.split(':').map(s => s.replace(/\D/g, ''));
-                const hours = parseInt(hStr), minutes = parseInt(mStr);
-                if (!isNaN(hours) && !isNaN(minutes) && hours>=0 && hours<=23 && minutes>=0 && minutes<=59) {
-                    seed = hours * 60 + minutes;
+                const [hStr, mStr, sStr] = originalTime.split(':').map(s => s.replace(/\D/g, ''));
+                const hours = parseInt(hStr), minutes = parseInt(mStr), seconds = parseInt(sStr);
+                if (!isNaN(hours) && !isNaN(minutes) && !isNaN(seconds) && 
+                    hours>=0 && hours<=23 && minutes>=0 && minutes<=59 && seconds>=0 && seconds<=59) {
+                    seed = hours * 3600 + minutes * 60 + seconds;
                     cleanText = inputText.replace(timeRegex, '').trim();
                 } else {
                     alert("النص غير صحيح");
@@ -909,7 +1525,7 @@
                 }
             } else {
                 const now = new Date();
-                seed = now.getUTCHours() * 60 + now.getUTCMinutes();
+                seed = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
             }
             const shuffled = seededShuffle(avestanChars, seed);
             const reverseMap = arabicChars.reduce((acc, char, index) => {
@@ -942,35 +1558,54 @@
 
         function playAudio() {
             const text = document.getElementById("outputText").innerText;
-            if (!text.trim()) {
-                alert("لا يوجد نص لقراءته");
-                return;
-            }
             
-            const timeRegex = new RegExp(`${fixedSymbolMap["("]}[\\uD800-\\uDBFF\\uDC00-\\uDFFF]+${fixedSymbolMap[")"]}`, 'g');
+            // إزالة الوقت الموجود بين القوسين
+            const timeRegex = new RegExp(`${fixedSymbolMap["("]}.*?${fixedSymbolMap[")"]}`, 'g');
             const cleanText = text.replace(timeRegex, '').trim();
+            
             let pronunciation = "";
             for (const char of cleanText) {
                 pronunciation += avestanPronunciation[char] || (/[\u0600-\u06FF]/.test(char) ? char : "");
             }
             
-            if (!pronunciation.trim()) {
-                alert("لا يوجد نص قابل للقراءة");
-                return;
+            // حل مشكلة الصوت في المتصفح
+            try {
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(pronunciation);
+                    utterance.lang = "ar";
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    alert("ميزة النطق غير مدعومة في هذا المتصفح");
+                }
+            } catch (error) {
+                console.error("حدث خطأ في تشغيل الصوت:", error);
+                alert("حدث خطأ في تشغيل الصوت. يرجى المحاولة مرة أخرى.");
             }
-            
-            const utterance = new SpeechSynthesisUtterance(pronunciation);
-            utterance.lang = "ar";
-            window.speechSynthesis.speak(utterance);
         }
 
         function changeBackground(color) {
             document.body.style.background = color === 'white' ? 'white' : 'black';
+            document.getElementById('backgroundOptions').style.display = 'none';
         }
         
-        function toggleBackgroundOptions() {
-            const opts = document.getElementById("backgroundOptions");
-            opts.style.display = opts.style.display === "none" ? "block" : "none";
+        function toggleSideMenu() {
+            const menu = document.getElementById("sideMenu");
+            menu.style.display = menu.style.display === "none" ? "block" : "none";
+            document.getElementById('backgroundOptions').style.display = 'none';
+        }
+        
+        function showHistory() {
+            document.getElementById('historyPanel').classList.add('active');
+            document.getElementById('sideMenu').style.display = 'none';
+        }
+        
+        function showGallery() {
+            toggleGallery();
+            document.getElementById('sideMenu').style.display = 'none';
+        }
+        
+        function showBackgroundOptions() {
+            document.getElementById('backgroundOptions').style.display = 'block';
         }
         
         function triggerFileInput() {
@@ -983,6 +1618,7 @@
             const reader = new FileReader();
             reader.onload = () => {
                 document.body.style.background = `url(${reader.result}) center/cover fixed`;
+                document.getElementById('backgroundOptions').style.display = 'none';
             };
             reader.readAsDataURL(file);
         }
@@ -1012,6 +1648,535 @@
                     document.body.removeChild(t);
                     showNotification();
                 });
+        }
+        
+        function copyOcrResult() {
+            const text = document.getElementById("ocrResult").textContent;
+            navigator.clipboard.writeText(text).then(showNotification)
+                .catch(() => {
+                    const t = document.createElement("textarea");
+                    t.value = text;
+                    document.body.appendChild(t);
+                    t.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(t);
+                    showNotification();
+                });
+        }
+        
+        // وظائف OCR الجديدة
+        function openOcrModal() {
+            document.getElementById('ocrModal').style.display = 'flex';
+            document.getElementById('ocrPreview').style.display = 'none';
+            document.getElementById('ocrResult').style.display = 'none';
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('translatedImageContainer').style.display = 'none';
+            document.getElementById('customTime').value = '';
+            document.querySelector('.download-translated-btn').style.display = 'none';
+            ocrBlocks = [];
+        }
+        
+        function closeOcrModal() {
+            document.getElementById('ocrModal').style.display = 'none';
+        }
+        
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('ocrPreview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                document.getElementById('ocrResult').style.display = 'none';
+                document.getElementById('progressContainer').style.display = 'none';
+                document.getElementById('translatedImageContainer').style.display = 'none';
+                document.querySelector('.download-translated-btn').style.display = 'none';
+                currentOcrImage = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+        
+        function openCamera() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                // طلب إذن الوصول إلى الكاميرا
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        const video = document.createElement('video');
+                        video.srcObject = stream;
+                        video.setAttribute('autoplay', '');
+                        video.setAttribute('playsinline', '');
+                        video.style.width = '100%';
+                        video.style.borderRadius = '15px';
+                        video.style.display = 'block';
+                        video.style.margin = '20px auto';
+                        
+                        const captureBtn = document.createElement('button');
+                        captureBtn.textContent = 'التقاط صورة';
+                        captureBtn.className = 'ocr-btn';
+                        captureBtn.style.margin = '10px 0';
+                        captureBtn.onclick = function() {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                            
+                            const preview = document.getElementById('ocrPreview');
+                            preview.src = canvas.toDataURL('image/png');
+                            preview.style.display = 'block';
+                            document.getElementById('ocrResult').style.display = 'none';
+                            currentOcrImage = canvas.toDataURL('image/png');
+                            
+                            // إيقاف الكاميرا
+                            stream.getTracks().forEach(track => track.stop());
+                            video.remove();
+                            captureBtn.remove();
+                        };
+                        
+                        const container = document.querySelector('.ocr-modal-content');
+                        const oldPreview = document.getElementById('ocrPreview');
+                        oldPreview.style.display = 'none';
+                        container.insertBefore(video, oldPreview);
+                        container.insertBefore(captureBtn, oldPreview);
+                    })
+                    .catch(function(error) {
+                        console.error('خطأ في فتح الكاميرا:', error);
+                        alert('تعذر فتح الكاميرا. يرجى التأكد من السماح بالوصول إلى الكاميرا في إعدادات المتصفح.');
+                    });
+            } else {
+                alert('المتصفح لا يدعم الوصول إلى الكاميرا');
+            }
+        }
+        
+        function recognizeText() {
+            const preview = document.getElementById('ocrPreview');
+            if (!preview.src || preview.src === '') {
+                alert('يرجى تحميل صورة أو التقاط صورة أولاً');
+                return;
+            }
+            
+            document.getElementById('ocrResult').textContent = 'جاري التعرف على النص...';
+            document.getElementById('ocrResult').style.display = 'block';
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressText').textContent = 'جاري التعرف على النص: 0%';
+            
+            Tesseract.recognize(
+                preview.src,
+                'ara+eng', // اللغة العربية والإنجليزية
+                {
+                    logger: progress => {
+                        if (progress.status === 'recognizing text') {
+                            const p = Math.round(progress.progress * 100);
+                            document.getElementById('progressBar').style.width = `${p}%`;
+                            document.getElementById('progressText').textContent = `جاري التعرف على النص: ${p}%`;
+                        }
+                    },
+                    // تحسين دقة التعرف على النصوص العربية والأفستانية
+                    tessedit_char_whitelist: 'ابتثجحخدذرزسشصضطظعغفقكلمنهويىءئؤإأآة𐬍𐬎𐬏𐬐𐬑𐬒𐬓𐬔𐬕𐬖𐬗𐬘𐬙𐬚𐬛𐬜𐬝𐬞𐬟𐬠𐬡𐬢𐬣𐬤𐬥𐬦𐬧𐬨𐬩𐬪𐬫𐬬𐬰𐬯𐬮𐬭𐬵𐬴𐬳𐬲𐬱',
+                    preserve_interword_spaces: '1'
+                }
+            ).then(({ data }) => {
+                const text = data.text;
+                document.getElementById('ocrResult').textContent = text;
+                document.getElementById('progressContainer').style.display = 'none';
+                
+                // تخزين كتل النص للاستخدام في ترجمة الصورة
+                ocrBlocks = [];
+                if (data.words && data.words.length > 0) {
+                    // تنظيم النصوص حسب موقعها في الصورة
+                    const sortedWords = data.words.sort((a, b) => {
+                        // ترتيب حسب الصفوف أولاً ثم الأعمدة
+                        const rowDiff = a.bbox.y0 - b.bbox.y0;
+                        if (Math.abs(rowDiff) > 10) return rowDiff;
+                        return a.bbox.x0 - b.bbox.x0;
+                    });
+                    
+                    // تجميع الكلمات في أسطر
+                    let currentLine = [];
+                    let currentY = sortedWords[0].bbox.y0;
+                    
+                    sortedWords.forEach(word => {
+                        if (Math.abs(word.bbox.y0 - currentY) < 10) {
+                            // نفس السطر
+                            currentLine.push(word);
+                        } else {
+                            // سطر جديد
+                            if (currentLine.length > 0) {
+                                ocrBlocks.push(currentLine);
+                            }
+                            currentLine = [word];
+                            currentY = word.bbox.y0;
+                        }
+                    });
+                    
+                    if (currentLine.length > 0) {
+                        ocrBlocks.push(currentLine);
+                    }
+                }
+                
+                // إضافة الوقت المختار يدويًا إذا تم إدخاله
+                const customTime = document.getElementById('customTime').value.trim();
+                if (customTime) {
+                    const timeType = document.querySelector('input[name="timeType"]:checked').value;
+                    let timeStr = '';
+                    
+                    if (timeType === 'arabic') {
+                        timeStr = `(${customTime})`;
+                    } else {
+                        timeStr = `${fixedSymbolMap["("]}${customTime.split('').map(c => fixedSymbolMap[c] || c).join('')}${fixedSymbolMap[")"]}`;
+                    }
+                    
+                    document.getElementById('ocrResult').textContent = text + ' ' + timeStr;
+                }
+            }).catch(err => {
+                console.error('خطأ في التعرف على النص:', err);
+                document.getElementById('ocrResult').textContent = 'حدث خطأ أثناء التعرف على النص. يرجى المحاولة مرة أخرى.';
+                document.getElementById('progressContainer').style.display = 'none';
+            });
+        }
+        
+        function useOcrResult() {
+            const recognizedText = document.getElementById('ocrResult').textContent;
+            if (recognizedText && recognizedText !== 'جاري التعرف على النص...') {
+                document.getElementById('inputText').value = recognizedText;
+                closeOcrModal();
+            } else {
+                alert('لا يوجد نص معترف به أو لم يتم التعرف على النص بعد');
+            }
+        }
+        
+        // ترجمة مباشرة للنص المعترف به
+        function directTranslate() {
+            const recognizedText = document.getElementById('ocrResult').textContent;
+            if (!recognizedText || recognizedText === 'جاري التعرف على النص...') {
+                alert('لا يوجد نص معترف به أو لم يتم التعرف على النص بعد');
+                return;
+            }
+            
+            document.getElementById('inputText').value = recognizedText;
+            translateToAvestan();
+            closeOcrModal();
+        }
+        
+        // وظيفة ترجمة النص فوق الصورة مع الحفاظ على الخصائص الأصلية
+        function translateAndOverlay() {
+            const recognizedText = document.getElementById('ocrResult').textContent;
+            if (!recognizedText || recognizedText === 'جاري التعرف على النص...') {
+                alert('لا يوجد نص معترف به أو لم يتم التعرف على النص بعد');
+                return;
+            }
+            
+            // إجراء الترجمة إلى الأفستاني
+            const customTimeMatch = recognizedText.match(/\((\d{2}:\d{2}:\d{2})\)/);
+            let seed, originalTime, translatedTime, cleanInput;
+            if (customTimeMatch) {
+                const [h, m, s] = customTimeMatch[1].split(':');
+                const hours = parseInt(h), minutes = parseInt(m), seconds = parseInt(s);
+                if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59 && seconds >= 0 && seconds <= 59) {
+                    seed = hours * 3600 + minutes * 60 + seconds;
+                    originalTime = `${h.padStart(2,'0')}:${m.padStart(2,'0')}:${s.padStart(2,'0')}`;
+                } else {
+                    const now = new Date();
+                    seed = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
+                    originalTime = now.getUTCHours().toString().padStart(2,'0') +
+                                   ':' + now.getUTCMinutes().toString().padStart(2,'0') +
+                                   ':' + now.getUTCSeconds().toString().padStart(2,'0');
+                }
+                translatedTime = originalTime.split('').map(c =>
+                    fixedSymbolMap[c] || c
+                ).join('');
+                cleanInput = recognizedText.replace(customTimeMatch[0], '').trim();
+            } else {
+                const now = new Date();
+                seed = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
+                originalTime = now.getUTCHours().toString().padStart(2,'0') +
+                               ':' + now.getUTCMinutes().toString().padStart(2,'0') +
+                               ':' + now.getUTCSeconds().toString().padStart(2,'0');
+                translatedTime = originalTime.split('').map(c =>
+                    fixedSymbolMap[c] || c
+                ).join('');
+                cleanInput = recognizedText;
+            }
+
+            const dynamicMap = generateDynamicMap(seed);
+            
+            const translatedText = cleanInput.split('').map(c => 
+                fixedSymbolMap[c] || dynamicMap[c] || c
+            ).join('');
+            
+            let timeWithSpaces = `${fixedSymbolMap["("]}${translatedTime}${fixedSymbolMap[")"]}`;
+            const finalText = translatedText + ' ' + timeWithSpaces;
+            
+            translatedTextForImage = finalText;
+            
+            // توليد الصورة المترجمة
+            const preview = document.getElementById('ocrPreview');
+            if (!preview.src || preview.src === '') {
+                alert('لا توجد صورة للترجمة');
+                return;
+            }
+            
+            try {
+                generateTranslatedImage(preview.src, finalText);
+            } catch (error) {
+                console.error('حدث خطأ أثناء توليد الصورة المترجمة:', error);
+                alert('حدث خطأ أثناء توليد الصورة المترجمة');
+            }
+        }
+        
+        // توليد الصورة المترجمة مع استبدال النص الأصلي بالنص المترجم
+        function generateTranslatedImage(imageSrc, translatedText) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                
+                // رسم الصورة الأصلية
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                // إذا كان لدينا كتل نصية محددة
+                if (ocrBlocks.length > 0) {
+                    // ترجمة كل كلمة على حدة
+                    const seed = new Date().getUTCHours() * 3600 + new Date().getUTCMinutes() * 60 + new Date().getUTCSeconds();
+                    
+                    // ترجمة كل سطر من النصوص
+                    ocrBlocks.forEach(line => {
+                        // إنشاء مستطيل للسطر
+                        const bbox = {
+                            left: Math.min(...line.map(w => w.bbox.x0)),
+                            top: Math.min(...line.map(w => w.bbox.y0)),
+                            right: Math.max(...line.map(w => w.bbox.x1)),
+                            bottom: Math.max(...line.map(w => w.bbox.y1)),
+                            width: Math.max(...line.map(w => w.bbox.x1)) - Math.min(...line.map(w => w.bbox.x0)),
+                            height: Math.max(...line.map(w => w.bbox.y1)) - Math.min(...line.map(w => w.bbox.y0))
+                        };
+                        
+                        // رسم خلفية مكان النص الأصلي
+                        ctx.fillStyle = getAverageColorAroundBlock(ctx, bbox);
+                        ctx.fillRect(bbox.left, bbox.top, bbox.width, bbox.height);
+                        
+                        // إعداد خصائص النص المترجم
+                        ctx.fillStyle = '#000000'; // لون النص (أسود افتراضي)
+                        const fontSize = Math.max(12, Math.min(bbox.height * 0.8, 48));
+                        ctx.font = `${fontSize}px Arial`;
+                        
+                        // تحديد محاذاة النص بناءً على موقعه في الصورة
+                        if (bbox.left > canvas.width / 2) {
+                            ctx.textAlign = 'right';
+                        } else if (bbox.right < canvas.width / 2) {
+                            ctx.textAlign = 'left';
+                        } else {
+                            ctx.textAlign = 'center';
+                        }
+                        
+                        ctx.textBaseline = 'middle';
+                        
+                        // حساب موقع النص
+                        const x = bbox.left + (bbox.width / 2);
+                        const y = bbox.top + (bbox.height / 2);
+                        
+                        // رسم النص المترجم في نفس مكان النص الأصلي
+                        ctx.fillText(translatedText, x, y);
+                    });
+                } else {
+                    // إذا لم نتمكن من تحديد كتل نصية، نستخدم الطريقة السابقة
+                    drawTextOverlay(ctx, translatedText, canvas.width, canvas.height);
+                }
+                
+                // عرض الصورة المترجمة
+                const dataURL = canvas.toDataURL('image/jpeg', 0.9);
+                document.getElementById('translatedImage').src = dataURL;
+                document.getElementById('translatedImageContainer').style.display = 'block';
+                document.getElementById('overlayText').textContent = translatedText;
+                document.querySelector('.download-translated-btn').style.display = 'block';
+                translatedImageData = dataURL;
+                
+                // حفظ الصورة في المعرض
+                saveTranslatedImage(translatedText, dataURL);
+                
+                // حفظ العملية في السجل
+                saveTranslation(recognizedText, translatedText, 'toAvestan', imageSrc);
+            };
+            img.src = imageSrc;
+        }
+        
+        // الحصول على اللون المتوسط حول الكتلة النصية
+        function getAverageColorAroundBlock(ctx, bbox) {
+            const sampleSize = 5;
+            let r = 0, g = 0, b = 0, count = 0;
+            
+            // أخذ عينات من حول الكتلة النصية
+            for (let i = 0; i < sampleSize; i++) {
+                const x = Math.max(0, bbox.left - 5 - i);
+                const y = Math.max(0, bbox.top - 5 - i);
+                const pixel = ctx.getImageData(x, y, 1, 1).data;
+                r += pixel[0];
+                g += pixel[1];
+                b += pixel[2];
+                count++;
+            }
+            
+            // حساب المتوسط
+            r = Math.floor(r / count);
+            g = Math.floor(g / count);
+            b = Math.floor(b / count);
+            
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+        
+        // رسم النص فوق الصورة (للحالات التي لا يوجد فيها كتل نصية محددة)
+        function drawTextOverlay(ctx, text, width, height) {
+            // إعداد خصائص النص
+            ctx.font = 'bold 30px Arial, sans-serif';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+            ctx.shadowBlur = 5;
+            
+            // تقسيم النص إلى أسطر
+            const maxWidth = width - 40;
+            const lineHeight = 40;
+            const lines = [];
+            let currentLine = '';
+            
+            const words = text.split(' ');
+            for (let i = 0; i < words.length; i++) {
+                const testLine = currentLine + words[i] + ' ';
+                const metrics = ctx.measureText(testLine);
+                
+                if (metrics.width > maxWidth && i > 0) {
+                    lines.push(currentLine);
+                    currentLine = words[i] + ' ';
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            lines.push(currentLine);
+            
+            // رسم النص في وسط الصورة
+            const startY = (height - (lines.length * lineHeight)) / 2;
+            
+            for (let i = 0; i < lines.length; i++) {
+                ctx.fillText(lines[i], width / 2, startY + (i * lineHeight));
+            }
+        }
+        
+        // تنزيل الصورة المترجمة
+        function downloadTranslatedImage() {
+            if (!translatedImageData) {
+                alert('لا توجد صورة مترجمة للتنزيل');
+                return;
+            }
+            
+            const blob = dataURLToBlob(translatedImageData);
+            saveAs(blob, 'rsi_translated_image.jpg');
+        }
+        
+        // تحويل Data URL إلى Blob
+        function dataURLToBlob(dataURL) {
+            const parts = dataURL.split(';base64,');
+            const contentType = parts[0].split(':')[1];
+            const raw = window.atob(parts[1]);
+            const uInt8Array = new Uint8Array(raw.length);
+            
+            for (let i = 0; i < raw.length; ++i) {
+                uInt8Array[i] = raw.charCodeAt(i);
+            }
+            
+            return new Blob([uInt8Array], {type: contentType});
+        }
+        
+        // حفظ الصورة المترجمة في المعرض
+        function saveTranslatedImage(text, imageData) {
+            const title = document.getElementById('operationTitle').value || 
+                          `صورة مترجمة ${new Date().toLocaleTimeString('ar-TN', { timeZone: 'Africa/Tunis' })}`;
+            
+            const imageItem = {
+                id: Date.now().toString(),
+                title: title,
+                text: text,
+                imageData: imageData,
+                timestamp: getTunisianTime()
+            };
+            
+            translatedImages.unshift(imageItem);
+            localStorage.setItem('translatedImages', JSON.stringify(translatedImages));
+            renderGallery();
+        }
+        
+        // عرض معرض الصور المترجمة
+        function renderGallery() {
+            const galleryGrid = document.getElementById('galleryGrid');
+            
+            if (translatedImages.length === 0) {
+                galleryGrid.innerHTML = '<div class="no-history">لا توجد صور مترجمة</div>';
+                return;
+            }
+            
+            galleryGrid.innerHTML = translatedImages.map(item => `
+                <div class="gallery-item">
+                    <img src="${item.imageData}" alt="Translated Image" onclick="openImage('${item.imageData}')">
+                    <p>${item.title}</p>
+                    <button class="gallery-delete-btn" onclick="deleteGalleryImage('${item.id}', event)">×</button>
+                </div>
+            `).join('');
+        }
+        
+        // حذف صورة من المعرض
+        function deleteGalleryImage(id, event) {
+            event.stopPropagation();
+            if (confirm('هل تريد حذف هذه الصورة من المكتبة؟')) {
+                translatedImages = translatedImages.filter(img => img.id !== id);
+                localStorage.setItem('translatedImages', JSON.stringify(translatedImages));
+                renderGallery();
+            }
+        }
+        
+        // فتح الصورة في نافذة جديدة
+        function openImage(imageData) {
+            const win = window.open();
+            win.document.write(`
+                <html>
+                <head>
+                    <title>RSI Translated Image</title>
+                    <style>
+                        body { 
+                            margin: 0; 
+                            padding: 20px; 
+                            background: #333; 
+                            display: flex; 
+                            justify-content: center; 
+                            align-items: center; 
+                            min-height: 100vh;
+                        }
+                        img { 
+                            max-width: 90%; 
+                            max-height: 90vh; 
+                            box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+                            border: 2px solid #fff;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <img src="${imageData}" alt="Translated Image">
+                </body>
+                </html>
+            `);
+        }
+        
+        // فتح/إغلاق معرض الصور
+        function toggleGallery() {
+            const gallery = document.getElementById('galleryContainer');
+            gallery.style.display = gallery.style.display === 'block' ? 'none' : 'block';
+            if (gallery.style.display === 'block') {
+                renderGallery();
+            }
         }
     </script>
 </body>
