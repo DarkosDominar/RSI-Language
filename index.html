@@ -15,6 +15,7 @@
             --accent-color: #ff6b6b;
             --success-color: #2ecc71;
             --error-color: #e74c3c;
+            --voice-active: #ff5252;
         }
         
         * {
@@ -40,6 +41,12 @@
         @keyframes fadeInOut {
             0%, 100% { opacity: 0; }
             10%, 90% { opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255, 82, 82, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
         }
 
         body {
@@ -108,7 +115,7 @@
 
         textarea {
             width: 100%;
-            height: 150px;
+            height: 200px; /* زيادة الارتفاع */
             border-radius: 12px;
             padding: 18px;
             font-size: 18px;
@@ -127,9 +134,10 @@
         }
 
         #outputText {
-            background: rgba(0, 0, 0, 0.7);
+            height: 200px; /* زيادة الارتفاع */
+            margin-top: 25px;
             padding: 20px;
-            min-height: 150px;
+            background: rgba(0, 0, 0, 0.7);
             font-size: 20px;
             word-wrap: break-word;
             color: var(--light-text);
@@ -137,6 +145,7 @@
             text-align: right;
             border: 2px solid rgba(255, 255, 255, 0.2);
             line-height: 1.6;
+            overflow-y: auto;
         }
 
         .buttons-container {
@@ -208,6 +217,14 @@
         .ocr-btn {
             background: linear-gradient(145deg, var(--primary-color), var(--secondary-color));
         }
+        
+        .conversation-btn {
+            background: linear-gradient(145deg, #006400, #004400);
+        }
+        
+        .stop-conversation-btn {
+            background: linear-gradient(145deg, #8B0000, #600000);
+        }
 
         .copy-icon {
             position: absolute;
@@ -232,6 +249,35 @@
 
         .output-copy {
             right: 20px;
+        }
+        
+        .voice-icon {
+            position: absolute;
+            bottom: 15px;
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .voice-icon:hover {
+            transform: scale(1.15);
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .voice-icon.active {
+            background: var(--voice-active);
+            animation: pulse 2s infinite;
+        }
+
+        .input-voice {
+            right: 60px;
         }
 
         .menu-icon {
@@ -596,6 +642,8 @@
             text-align: center;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
             position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         
         .ocr-modal-header {
@@ -693,7 +741,7 @@
             border: 2px solid var(--primary-color);
             background: rgba(255, 255, 255, 0.1);
             color: white;
-            width: 150px;
+            width: 200px;
             font-size: 18px;
             text-align: center;
             margin-bottom: 15px;
@@ -908,6 +956,28 @@
             transform: scale(1.1);
         }
         
+        .gallery-download-btn {
+            position: absolute;
+            top: 10px;
+            right: 50px;
+            background: rgba(0, 0, 255, 0.7);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .gallery-download-btn:hover {
+            background: rgba(0, 0, 255, 0.9);
+            transform: scale(1.1);
+        }
+        
         .background-options {
             display: none;
             position: fixed;
@@ -933,6 +1003,34 @@
             white-space: pre-wrap;
             font-family: monospace;
             text-align: left;
+        }
+        
+        .voice-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--dark-bg);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            z-index: 1000;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .conversation-status {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: var(--dark-bg);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            z-index: 1000;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
         }
         
         @media (min-width: 768px) {
@@ -974,6 +1072,20 @@
                 font-size: 1.8rem;
                 margin-bottom: 15px;
             }
+            
+            .ocr-modal-content {
+                padding: 15px;
+                max-height: 95vh;
+            }
+            
+            .ocr-btn {
+                min-width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            textarea, #outputText {
+                height: 150px;
+            }
         }
     </style>
 </head>
@@ -992,13 +1104,20 @@
             <svg class="copy-icon input-copy" onclick="copyInputText()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
             </svg>
+            <div class="voice-icon input-voice" id="inputVoice" onclick="startVoiceInput('input')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
+                    <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+                </svg>
+            </div>
         </div>
 
         <div class="buttons-container">
-            <button class="translate-btn" onclick="translateToAvestan()">الترجمة إلى RSI Language</button>
+            <button class="translate-btn" onclick="translateToRSI()">الترجمة إلى RSI Language</button>
             <button class="translate-btn" onclick="translateToArabic()">ترجمة إلى العربية</button>
             <button class="play-btn" onclick="playAudio()">تشغيل الصوت</button>
             <button class="ocr-btn" onclick="openOcrModal()">ترجمة من صورة</button>
+            <button class="conversation-btn" id="startConversation" onclick="startConversation()">بدء المحادثة</button>
+            <button class="stop-conversation-btn" id="stopConversation" onclick="stopConversation()" style="display:none;">إيقاف المحادثة</button>
         </div>
         
         <div class="text-container output-container">
@@ -1006,6 +1125,11 @@
             <svg class="copy-icon output-copy" onclick="copyOutputText()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
             </svg>
+            <div class="voice-icon" id="outputVoice" onclick="startVoiceInput('output')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
+                    <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+                </svg>
+            </div>
         </div>
     </div>
 
@@ -1026,6 +1150,8 @@
     </div>
 
     <div id="copyNotification">تم نسخ النص بنجاح!</div>
+    <div id="voiceStatus" class="voice-status">جاري الاستماع...</div>
+    <div id="conversationStatus" class="conversation-status">وضع المحادثة نشط</div>
     
     <!-- لوحة سجل العمليات -->
     <div id="historyPanel">
@@ -1042,7 +1168,7 @@
             <div class="filter-btn active" data-filter="all">الكل</div>
             <div class="filter-btn" data-filter="title">العنوان</div>
             <div class="filter-btn" data-filter="text">النص</div>
-            <div class="filter-btn" data-filter="toAvestan">إلى اللغة الأفستانية</div>
+            <div class="filter-btn" data-filter="toRSI">إلى RSI Language</div>
             <div class="filter-btn" data-filter="toArabic">إلى العربية</div>
             <div class="filter-btn" data-filter="time">الوقت</div>
         </div>
@@ -1081,13 +1207,13 @@
             
             <div class="time-option">
                 <label for="customTime">الوقت (اختياري):</label>
-                <input type="text" id="customTime" placeholder="00:00:00" maxlength="8">
+                <input type="text" id="customTime" placeholder="00:00:00">
                 <div class="time-type">
                     <label>
                         <input type="radio" name="timeType" value="arabic" checked> عربي
                     </label>
                     <label>
-                        <input type="radio" name="timeType" value="avestan"> أفستاني
+                        <input type="radio" name="timeType" value="rsi"> RSI
                     </label>
                 </div>
             </div>
@@ -1127,7 +1253,7 @@
 
     <script>
         // الأحرف والخرائط الأساسية
-        const avestanChars = [
+        const rsiChars = [
             "𐬍","𐬎","𐬏","𐬐","𐬑","𐬒","𐬓","𐬔","𐬕","𐬖","𐬗","𐬘",
             "𐬙","𐬚","𐬛","𐬜","𐬝","𐬞","𐬟","𐬠","𐬡","𐬢","𐬣","𐬤",
             "𐬥","𐬦","𐬧","𐬨","𐬩","𐬪","𐬫","𐬬","𐬰","𐬯","𐬮","𐬭",
@@ -1157,12 +1283,203 @@
         let translatedImageData = '';
         let ocrBlocks = [];
         let translatedImages = [];
+        let recognition = null;
+        let isConversationActive = false;
+        let currentConversationDirection = 'toRSI';
 
         // تهيئة التطبيق عند التحميل
         window.addEventListener('DOMContentLoaded', () => {
+            // تحميل السجلات من localStorage
+            const savedHistory = localStorage.getItem('translationHistory');
+            if (savedHistory) {
+                translationHistory = JSON.parse(savedHistory);
+                // تحويل اتجاهات RSU القديمة إلى RSI
+                translationHistory = translationHistory.map(item => {
+                    if (item.direction === 'toRSU') {
+                        item.direction = 'toRSI';
+                    }
+                    return item;
+                });
+            }
+            
+            const savedImages = localStorage.getItem('translatedImages');
+            if (savedImages) {
+                translatedImages = JSON.parse(savedImages);
+            }
+            
             setupHistoryEvents();
             renderGallery();
+            
+            // تهيئة نظام التعرف الصوتي
+            initSpeechRecognition();
         });
+
+        // تهيئة نظام التعرف الصوتي
+        function initSpeechRecognition() {
+            if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.continuous = false;
+                recognition.lang = 'ar-SA';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+                
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('voiceStatus').style.display = 'none';
+                    
+                    if (isConversationActive) {
+                        handleConversationSpeech(transcript);
+                    } else {
+                        document.getElementById('inputText').value = transcript;
+                    }
+                };
+                
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error', event.error);
+                    document.getElementById('voiceStatus').style.display = 'none';
+                    document.getElementById('inputVoice').classList.remove('active');
+                    document.getElementById('outputVoice').classList.remove('active');
+                };
+                
+                recognition.onend = function() {
+                    document.getElementById('voiceStatus').style.display = 'none';
+                    document.getElementById('inputVoice').classList.remove('active');
+                    document.getElementById('outputVoice').classList.remove('active');
+                    
+                    if (isConversationActive) {
+                        setTimeout(() => {
+                            recognition.lang = currentConversationDirection === 'toRSI' ? 'ar-SA' : 'ar-SA';
+                            recognition.start();
+                            document.getElementById('voiceStatus').style.display = 'block';
+                            document.getElementById('voiceStatus').textContent = currentConversationDirection === 'toRSI' 
+                                ? 'جاري الاستماع للعربية...' 
+                                : 'جاري الاستماع للافستانية...';
+                        }, 1000);
+                    }
+                };
+            } else {
+                console.warn('Speech recognition not supported in this browser');
+            }
+        }
+        
+        // بدء التعرف الصوتي
+        function startVoiceInput(target) {
+            if (!recognition) {
+                alert('نظام التعرف الصوتي غير مدعوم في متصفحك');
+                return;
+            }
+            
+            document.getElementById('voiceStatus').style.display = 'block';
+            document.getElementById('voiceStatus').textContent = 'جاري الاستماع...';
+            
+            if (target === 'input') {
+                recognition.lang = 'ar-SA';
+                document.getElementById('inputVoice').classList.add('active');
+            } else {
+                recognition.lang = 'ar-SA';
+                document.getElementById('outputVoice').classList.add('active');
+            }
+            
+            try {
+                recognition.start();
+            } catch (e) {
+                console.error('Speech recognition start error', e);
+                document.getElementById('voiceStatus').style.display = 'none';
+                document.getElementById('inputVoice').classList.remove('active');
+                document.getElementById('outputVoice').classList.remove('active');
+            }
+        }
+        
+        // بدء المحادثة
+        function startConversation() {
+            if (!recognition) {
+                alert('نظام التعرف الصوتي غير مدعوم في متصفحك');
+                return;
+            }
+            
+            isConversationActive = true;
+            currentConversationDirection = 'toRSI';
+            
+            document.getElementById('startConversation').style.display = 'none';
+            document.getElementById('stopConversation').style.display = 'inline-block';
+            document.getElementById('conversationStatus').style.display = 'block';
+            document.getElementById('conversationStatus').textContent = 'وضع المحادثة نشط (عربي → افستانية)';
+            
+            recognition.lang = 'ar-SA';
+            recognition.start();
+            document.getElementById('voiceStatus').style.display = 'block';
+            document.getElementById('voiceStatus').textContent = 'جاري الاستماع للعربية...';
+            document.getElementById('inputVoice').classList.add('active');
+        }
+        
+        // إيقاف المحادثة
+        function stopConversation() {
+            isConversationActive = false;
+            document.getElementById('startConversation').style.display = 'inline-block';
+            document.getElementById('stopConversation').style.display = 'none';
+            document.getElementById('conversationStatus').style.display = 'none';
+            
+            if (recognition) {
+                recognition.stop();
+            }
+            
+            document.getElementById('inputVoice').classList.remove('active');
+            document.getElementById('outputVoice').classList.remove('active');
+            document.getElementById('voiceStatus').style.display = 'none';
+        }
+        
+        // معالجة الكلام في وضع المحادثة
+        function handleConversationSpeech(transcript) {
+            if (currentConversationDirection === 'toRSI') {
+                // تحديث حقل الإدخال
+                document.getElementById('inputText').value = transcript;
+                
+                // الترجمة إلى RSI
+                translateToRSI();
+                
+                // تشغيل الصوت
+                setTimeout(() => {
+                    playAudio();
+                    
+                    // تبديل الاتجاه
+                    currentConversationDirection = 'toArabic';
+                    document.getElementById('conversationStatus').textContent = 'وضع المحادثة نشط (افستانية → عربي)';
+                    
+                    // بدء الاستماع للرد بالافستانية (نستخدم العربية هنا لأن الافستانية ليست لغة منطوقة)
+                    setTimeout(() => {
+                        recognition.lang = 'ar-SA';
+                        recognition.start();
+                        document.getElementById('voiceStatus').style.display = 'block';
+                        document.getElementById('voiceStatus').textContent = 'جاري الاستماع للافستانية...';
+                        document.getElementById('outputVoice').classList.add('active');
+                    }, 2000);
+                }, 500);
+            } else {
+                // تحديث حقل الإدخال بالافستانية (في الواقع سيكون نص عربي)
+                document.getElementById('inputText').value = transcript;
+                
+                // الترجمة إلى العربية
+                translateToArabic();
+                
+                // تشغيل الصوت
+                setTimeout(() => {
+                    playAudio();
+                    
+                    // تبديل الاتجاه
+                    currentConversationDirection = 'toRSI';
+                    document.getElementById('conversationStatus').textContent = 'وضع المحادثة نشط (عربي → افستانية)';
+                    
+                    // بدء الاستماع للعربية
+                    setTimeout(() => {
+                        recognition.lang = 'ar-SA';
+                        recognition.start();
+                        document.getElementById('voiceStatus').style.display = 'block';
+                        document.getElementById('voiceStatus').textContent = 'جاري الاستماع للعربية...';
+                        document.getElementById('inputVoice').classList.add('active');
+                    }, 2000);
+                }, 500);
+            }
+        }
 
         // إعداد أحداث لوحة السجل
         function setupHistoryEvents() {
@@ -1303,7 +1620,7 @@
             const searchTerm = document.getElementById('historySearch').value.toLowerCase();
             
             if (translationHistory.length === 0) {
-                historyList.innerHTML = '<div class="no-history">لا توجد عمليات سابقة</div>';
+                historyList.innerHTML = '<div class="no-history">لا توجد عمليات سابقة<br><small>سيظهر السجل هنا بعد إجراء عمليات الترجمة</small></div>';
                 return;
             }
             
@@ -1317,8 +1634,8 @@
                     } else if (currentFilter === 'text') {
                         return item.inputText.toLowerCase().includes(searchTerm) || 
                                item.outputText.toLowerCase().includes(searchTerm);
-                    } else if (currentFilter === 'toAvestan') {
-                        return item.direction === 'toAvestan' && 
+                    } else if (currentFilter === 'toRSI') {
+                        return item.direction === 'toRSI' && 
                               (item.title.toLowerCase().includes(searchTerm) || 
                                item.inputText.toLowerCase().includes(searchTerm) || 
                                item.outputText.toLowerCase().includes(searchTerm));
@@ -1338,8 +1655,8 @@
                 });
             } else if (currentFilter !== 'all') {
                 filteredHistory = translationHistory.filter(item => {
-                    if (currentFilter === 'toAvestan') {
-                        return item.direction === 'toAvestan';
+                    if (currentFilter === 'toRSI') {
+                        return item.direction === 'toRSI';
                     } else if (currentFilter === 'toArabic') {
                         return item.direction === 'toArabic';
                     }
@@ -1362,7 +1679,7 @@
                         <div class="history-date">${item.timestamp}</div>
                     </div>
                     <div class="history-direction ${item.direction}">
-                        ${item.direction === 'toAvestan' ? 'إلى اللغة الأفستانية' : 'إلى العربية'}
+                        ${item.direction === 'toRSI' ? 'إلى RSI Language' : 'إلى العربية'}
                         ${item.type === 'ocr' ? ' (صورة)' : ''}
                     </div>
                     <div class="history-preview">
@@ -1424,14 +1741,14 @@
         }
         
         function generateDynamicMap(seed) {
-            const shuffled = seededShuffle(avestanChars, seed);
+            const shuffled = seededShuffle(rsiChars, seed);
             return arabicChars.reduce((acc, char, index) => {
                 acc[char] = shuffled[index % shuffled.length];
                 return acc;
             }, {});
         }
 
-        function translateToAvestan() {
+        function translateToRSI() {
             let inputText = document.getElementById("inputText").value;
             const customTimeMatch = inputText.match(/\((\d{2}:\d{2}:\d{2})\)/);
             let seed, originalTime, translatedTime, cleanInput;
@@ -1499,7 +1816,7 @@
             document.getElementById("outputText").innerText = finalText;
             
             // حفظ العملية في السجل
-            saveTranslation(inputText, finalText, 'toAvestan');
+            saveTranslation(inputText, finalText, 'toRSI');
         }
 
         function translateToArabic() {
@@ -1527,7 +1844,7 @@
                 const now = new Date();
                 seed = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
             }
-            const shuffled = seededShuffle(avestanChars, seed);
+            const shuffled = seededShuffle(rsiChars, seed);
             const reverseMap = arabicChars.reduce((acc, char, index) => {
                 acc[shuffled[index]] = char;
                 return acc;
@@ -1545,7 +1862,7 @@
             saveTranslation(inputText, outputText, 'toArabic');
         }
 
-        const avestanPronunciation = {
+        const rsiPronunciation = {
             "𐬍":"š","𐬎":"ž","𐬏":"ŋ","𐬐":"k","𐬑":"x",
             "𐬒":"γ","𐬓":"č","𐬔":"ǰ","𐬕":"t","𐬖":"d",
             "𐬗":"p","𐬘":"b","𐬙":"n","𐬚":"m","𐬛":"y",
@@ -1565,7 +1882,7 @@
             
             let pronunciation = "";
             for (const char of cleanText) {
-                pronunciation += avestanPronunciation[char] || (/[\u0600-\u06FF]/.test(char) ? char : "");
+                pronunciation += rsiPronunciation[char] || (/[\u0600-\u06FF]/.test(char) ? char : "");
             }
             
             // حل مشكلة الصوت في المتصفح
@@ -1597,6 +1914,7 @@
         function showHistory() {
             document.getElementById('historyPanel').classList.add('active');
             document.getElementById('sideMenu').style.display = 'none';
+            renderHistory(); // حل المشكلة الأساسية
         }
         
         function showGallery() {
@@ -1857,7 +2175,7 @@
             }
             
             document.getElementById('inputText').value = recognizedText;
-            translateToAvestan();
+            translateToRSI();
             closeOcrModal();
         }
         
@@ -1869,7 +2187,7 @@
                 return;
             }
             
-            // إجراء الترجمة إلى الأفستاني
+            // إجراء الترجمة إلى RSI
             const customTimeMatch = recognizedText.match(/\((\d{2}:\d{2}:\d{2})\)/);
             let seed, originalTime, translatedTime, cleanInput;
             if (customTimeMatch) {
@@ -1956,12 +2274,15 @@
                             height: Math.max(...line.map(w => w.bbox.y1)) - Math.min(...line.map(w => w.bbox.y0))
                         };
                         
+                        // الحصول على متوسط لون النص من الصورة الأصلية
+                        const textColor = getAverageTextColor(ctx, bbox);
+                        
                         // رسم خلفية مكان النص الأصلي
                         ctx.fillStyle = getAverageColorAroundBlock(ctx, bbox);
                         ctx.fillRect(bbox.left, bbox.top, bbox.width, bbox.height);
                         
                         // إعداد خصائص النص المترجم
-                        ctx.fillStyle = '#000000'; // لون النص (أسود افتراضي)
+                        ctx.fillStyle = textColor;
                         const fontSize = Math.max(12, Math.min(bbox.height * 0.8, 48));
                         ctx.font = `${fontSize}px Arial`;
                         
@@ -2000,7 +2321,7 @@
                 saveTranslatedImage(translatedText, dataURL);
                 
                 // حفظ العملية في السجل
-                saveTranslation(recognizedText, translatedText, 'toAvestan', imageSrc);
+                saveTranslation(recognizedText, translatedText, 'toRSI', imageSrc);
             };
             img.src = imageSrc;
         }
@@ -2014,6 +2335,30 @@
             for (let i = 0; i < sampleSize; i++) {
                 const x = Math.max(0, bbox.left - 5 - i);
                 const y = Math.max(0, bbox.top - 5 - i);
+                const pixel = ctx.getImageData(x, y, 1, 1).data;
+                r += pixel[0];
+                g += pixel[1];
+                b += pixel[2];
+                count++;
+            }
+            
+            // حساب المتوسط
+            r = Math.floor(r / count);
+            g = Math.floor(g / count);
+            b = Math.floor(b / count);
+            
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+        
+        // الحصول على متوسط لون النص
+        function getAverageTextColor(ctx, bbox) {
+            const sampleSize = 10;
+            let r = 0, g = 0, b = 0, count = 0;
+            
+            // أخذ عينات من داخل الكتلة النصية
+            for (let i = 0; i < sampleSize; i++) {
+                const x = Math.max(bbox.left, Math.min(bbox.right, bbox.left + Math.random() * bbox.width));
+                const y = Math.max(bbox.top, Math.min(bbox.bottom, bbox.top + Math.random() * bbox.height));
                 const pixel = ctx.getImageData(x, y, 1, 1).data;
                 r += pixel[0];
                 g += pixel[1];
@@ -2115,7 +2460,7 @@
             const galleryGrid = document.getElementById('galleryGrid');
             
             if (translatedImages.length === 0) {
-                galleryGrid.innerHTML = '<div class="no-history">لا توجد صور مترجمة</div>';
+                galleryGrid.innerHTML = '<div class="no-history">لا توجد صور مترجمة<br><small>ستظهر الصور هنا بعد ترجمة الصور</small></div>';
                 return;
             }
             
@@ -2124,6 +2469,7 @@
                     <img src="${item.imageData}" alt="Translated Image" onclick="openImage('${item.imageData}')">
                     <p>${item.title}</p>
                     <button class="gallery-delete-btn" onclick="deleteGalleryImage('${item.id}', event)">×</button>
+                    <button class="gallery-download-btn" onclick="downloadGalleryImage('${item.id}', event)">↓</button>
                 </div>
             `).join('');
         }
@@ -2135,6 +2481,16 @@
                 translatedImages = translatedImages.filter(img => img.id !== id);
                 localStorage.setItem('translatedImages', JSON.stringify(translatedImages));
                 renderGallery();
+            }
+        }
+        
+        // تنزيل صورة من المعرض
+        function downloadGalleryImage(id, event) {
+            event.stopPropagation();
+            const item = translatedImages.find(img => img.id === id);
+            if (item) {
+                const blob = dataURLToBlob(item.imageData);
+                saveAs(blob, `rsi_image_${item.id}.jpg`);
             }
         }
         
