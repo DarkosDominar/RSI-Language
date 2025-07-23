@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RSI Language Translator - الذكي</title>
-    <!-- تم تغيير الروابط الخارجية إلى ملفات محلية -->
-    <script src="js/tesseract.min.js"></script>
-    <script src="js/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         :root {
             --primary-color: #1a2a6c;
@@ -1291,21 +1290,11 @@
                 height: 50px;
             }
         }
-
-        /* تمت إضافة ستايل أيقونة الرأس الجديدة */
-        .header img {
-            border-radius: 50%;
-            background: linear-gradient(135deg, #b21f1f, #1a2a6c);
-            padding: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
     </style>
 </head>
 <body>
-    <!-- تم تعديل الرأس ليشمل الأيقونة -->
     <div class="header">
-        <img src="icon-192.png" alt="RSI Icon" style="height: 50px; margin-left: 15px;">
-        <h1>RSI Language Translator</h1>
+        <h1>RSI Language Translator - الذكي</h1>
     </div>
     
     <div class="container">
@@ -1502,11 +1491,6 @@
             <!-- سيتم ملء هذا القسم بالصور المترجمة -->
         </div>
     </div>
-
-    <!-- زر التثبيت -->
-    <button id="installBtn" style="display:none; position:fixed; bottom:20px; left:20px; padding:15px; background:#4CAF50; color:white; border-radius:10px; z-index:10000;">
-      تثبيت التطبيق
-    </button>
 
     <script>
         // الأحرف والخرائط الأساسية
@@ -2848,26 +2832,6 @@
                 renderGallery();
             }
         }
-
-        // كود التثبيت
-        let deferredPrompt;
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-          e.preventDefault();
-          deferredPrompt = e;
-          document.getElementById('installBtn').style.display = 'block';
-        });
-
-        document.getElementById('installBtn').addEventListener('click', async () => {
-          if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-              document.getElementById('installBtn').style.display = 'none';
-            }
-            deferredPrompt = null;
-          }
-        });
     </script>
 </body>
 </html>
